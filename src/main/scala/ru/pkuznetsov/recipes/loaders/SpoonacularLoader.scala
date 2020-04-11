@@ -5,6 +5,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
 import akka.util.ByteString
 import cats.effect.{ContextShift, IO}
+import cats.implicits._
 import com.typesafe.scalalogging.StrictLogging
 
 import scala.concurrent.duration.Duration
@@ -27,6 +28,11 @@ object Test extends App {
   implicit val cs = IO.contextShift(ExecutionContext.global)
 
   val loader = new SpoonacularLoader("9be944945f3548d4854ea918c6e13963")
-  loader.getRecipe(10).unsafeRunSync()
+
+  List(333L, 565L, 10865L, 34563L)
+    .map(loader.getRecipe)
+    .sequence
+    .unsafeRunSync()
+
   Await.result(system.terminate(), Duration.Inf)
 }
