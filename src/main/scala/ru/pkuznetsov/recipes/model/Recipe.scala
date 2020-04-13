@@ -2,7 +2,7 @@ package ru.pkuznetsov.recipes.model
 
 import java.net.URI
 
-import cats.effect.IO
+import cats.MonadError
 import cats.implicits._
 import io.circe.Json
 
@@ -28,7 +28,7 @@ final case class Ingredient(id: Long,
 
 object Recipe {
 
-  def fromSpoonacularResponse(json: Json): IO[Recipe] = IO {
+  def fromSpoonacularResponse[F[_]](json: Json)(implicit monad: MonadError[F, Throwable]): F[Recipe] = monad.catchNonFatal {
     def getOpt[A](name: String): Option[Json] = (json \\ name).headOption
 
     def getSummaryData(postfix: String): Option[Double] =
@@ -47,7 +47,7 @@ object Recipe {
         id = 0L,
         name = (json \\ "name").headOption.flatMap(_.asString).get,
         amount = (json \\ "metric").flatMap(_ \\ "amount").flatMap(_.asNumber).map(_.toDouble).head,
-        unit = (json \\ "metric").flatMap(_ \\ "unitShort").flatMap(_.asString).headOption.flatMap {
+        unit = (json \\ "metric").flatMap(_ \\ "unitLong").flatMap(_.asString).headOption.flatMap {
           case "" => None
           case v => Some(v)
         }
@@ -74,7 +74,7 @@ object Recipe {
       ingredients = parseIngredients
     )
   }.handleErrorWith { err =>
-    IO.raiseError(Errors.CannotParseData(err))
+    monad.raiseError(Errors.CannotParseData(err))
   }
 
 }

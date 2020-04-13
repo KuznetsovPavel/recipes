@@ -1,6 +1,8 @@
 package ru.pkuznetsov.recipes.loaders
 
+import cats.MonadError
 import cats.effect.IO
+import cats.implicits._
 import com.typesafe.scalalogging.StrictLogging
 import io.circe.Json
 import ru.pkuznetsov.recipes.loaders.SpoonacularLoader.Backend
@@ -11,25 +13,26 @@ import sttp.client.circe._
 
 import scala.concurrent.ExecutionContext
 
-class SpoonacularLoader(backend: Backend, apiKey: String) extends StrictLogging {
+class SpoonacularLoader[F[_]](backend: Backend[F], apiKey: String)
+                             (implicit monad: MonadError[F, Throwable]) extends StrictLogging {
 
-  def getRecipe(recipeId: Long): IO[Recipe] = {
+  def getRecipe(recipeId: Long): F[Recipe] = {
     val request = basicRequest
       .get(uri"https://api.spoonacular.com/recipes/$recipeId/information?apiKey=$apiKey")
       .response(asJson[Json])
 
     for {
       response <- backend.send(request)
-      recipeJson <- IO.fromEither(response.body)
-      _ <- IO.pure(logger.debug(s"get recipe with id $recipeId, content: $recipeJson"))
-      recipe <- Recipe.fromSpoonacularResponse(recipeJson)
+      recipeJson <-  monad.fromEither(response.body)
+      _ <- monad.pure(logger.debug(s"get recipe with id $recipeId, content: $recipeJson"))
+      recipe <- Recipe.fromSpoonacularResponse[F](recipeJson)
     } yield recipe
 
   }
 }
 
 object SpoonacularLoader {
-  type Backend = SttpBackend[IO, Nothing, Nothing]
+  type Backend[F[_]] = SttpBackend[F, Nothing, Nothing]
 }
 
 object Test extends App {

@@ -29,7 +29,7 @@ class RecipeTest extends FunSuite with Matchers {
         Ingredient(0L, "chillies", 1, None),
         Ingredient(0L, "coarse sea salt", 6, Some("servings")),
         Ingredient(0L, "extra-virgin olive oil", 6, Some("servings")),
-        Ingredient(0L, "fresh anchovies", 500, Some("g")),
+        Ingredient(0L, "fresh anchovies", 500, Some("grams")),
         Ingredient(0L, "fresh parsley", 6, Some("servings")),
         Ingredient(0L, "fresh thyme", 6, Some("servings")),
         Ingredient(0L, "garlic cloves", 1, None),
@@ -41,7 +41,7 @@ class RecipeTest extends FunSuite with Matchers {
     val result = for {
       str <- IO(Source.fromResource("SpoonacularResponse.json").mkString)
       json <- IO(parse(str).getOrElse(Json.fromString("")))
-      recipe <- Recipe.fromSpoonacularResponse(json)
+      recipe <- Recipe.fromSpoonacularResponse[IO](json)
     } yield recipe
 
     result.unsafeRunSync() shouldBe recipe
@@ -57,7 +57,7 @@ class RecipeTest extends FunSuite with Matchers {
           |          "unitLong": "servings"""".stripMargin, """"ahahaha":"hahaha""""
       ))
       json <- IO(parse(incorrect).getOrElse(Json.fromString("")))
-      recipe <- Recipe.fromSpoonacularResponse(json)
+      recipe <- Recipe.fromSpoonacularResponse[IO](json)
     } yield recipe
 
     an[Errors.CannotParseData] shouldBe thrownBy(result.unsafeRunSync())
