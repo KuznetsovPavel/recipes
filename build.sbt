@@ -13,6 +13,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
   "org.typelevel" %% "cats-core" % "2.0.0",
   "org.typelevel" %% "cats-effect" % "2.1.2",
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % "2.0.7",
+  "com.softwaremill.sttp.client" %% "circe" % "2.0.7",
 
   "org.scalatest" %% "scalatest" % "3.0.8" % Test,
   "org.scalamock" %% "scalamock" % "4.4.0" % Test

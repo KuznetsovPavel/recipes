@@ -1,38 +1,46 @@
 package ru.pkuznetsov.recipes.loaders
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
-import akka.util.ByteString
-import cats.effect.{ContextShift, IO}
-import cats.implicits._
+import cats.effect.IO
 import com.typesafe.scalalogging.StrictLogging
+import io.circe.Json
+import ru.pkuznetsov.recipes.loaders.SpoonacularLoader.Backend
+import ru.pkuznetsov.recipes.model.Recipe
+import sttp.client._
+import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
+import sttp.client.circe._
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.ExecutionContext
 
-class SpoonacularLoader(apiKey: String) extends StrictLogging {
+class SpoonacularLoader(backend: Backend, apiKey: String) extends StrictLogging {
 
-  def getRecipe(recipeId: Long)(implicit ac: ActorSystem, cs: ContextShift[IO]) =
+  def getRecipe(recipeId: Long): IO[Recipe] = {
+    val request = basicRequest
+      .get(uri"https://api.spoonacular.com/recipes/$recipeId/information?apiKey=$apiKey")
+      .response(asJson[Json])
+
     for {
-      uri <- IO.pure(s"https://api.spoonacular.com/recipes/$recipeId/information?apiKey=$apiKey")
-      response <- IO.fromFuture(IO(Http().singleRequest(HttpRequest(uri = uri, method = HttpMethods.GET))))
-      entity <- IO.fromFuture(IO(response.entity.dataBytes.runFold(ByteString(""))(_ ++ _)))
-      stringEntity <- IO(entity.utf8String)
-      _ <- IO(logger.debug(s"get recipe with id $recipeId, content: $stringEntity"))
-    } yield stringEntity
+      response <- backend.send(request)
+      recipeJson <- IO.fromEither(response.body)
+      _ <- IO.pure(logger.debug(s"get recipe with id $recipeId, content: $recipeJson"))
+      recipe <- Recipe.fromSpoonacularResponse(recipeJson)
+    } yield recipe
+
+  }
+}
+
+object SpoonacularLoader {
+  type Backend = SttpBackend[IO, Nothing, Nothing]
 }
 
 object Test extends App {
-  implicit val system = ActorSystem()
   implicit val cs = IO.contextShift(ExecutionContext.global)
 
-  val loader = new SpoonacularLoader("9be944945f3548d4854ea918c6e13963")
+  val res = for {
+    backend <- AsyncHttpClientCatsBackend[IO]()
+    loader = new SpoonacularLoader(backend, "9be944945f3548d4854ea918c6e13963")
+    res <- loader.getRecipe(333L)
+    _ <- backend.close()
+  } yield res
 
-  List(333L, 565L, 10865L, 34563L)
-    .map(loader.getRecipe)
-    .sequence
-    .unsafeRunSync()
-
-  Await.result(system.terminate(), Duration.Inf)
+  println(res.unsafeRunSync())
 }
