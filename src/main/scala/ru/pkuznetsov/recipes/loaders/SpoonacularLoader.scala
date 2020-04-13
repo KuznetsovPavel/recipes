@@ -23,7 +23,7 @@ class SpoonacularLoader[F[_]](backend: Backend[F], apiKey: String)
 
     for {
       response <- backend.send(request)
-      recipeJson <-  monad.fromEither(response.body)
+      recipeJson <- monad.fromEither(response.body)
       _ <- monad.pure(logger.debug(s"get recipe with id $recipeId, content: $recipeJson"))
       recipe <- Recipe.fromSpoonacularResponse[F](recipeJson)
     } yield recipe
