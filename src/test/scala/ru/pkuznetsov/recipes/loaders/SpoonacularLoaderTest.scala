@@ -3,8 +3,10 @@ package ru.pkuznetsov.recipes.loaders
 import java.net.URI
 
 import cats.implicits._
+import io.circe.ParsingFailure
 import io.circe.parser.parse
 import org.scalatest.{AsyncFunSuite, Matchers}
+import ru.pkuznetsov.recipes.model.Errors.CannotParseData
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 import sttp.client.testing._
 
@@ -52,6 +54,33 @@ class SpoonacularLoaderTest extends AsyncFunSuite with Matchers {
     loader.getRecipe(10).map { result =>
       result shouldBe recipe
     }
+  }
+
+  test("incorrect data were loaded") {
+    val data = parse(Source.fromResource("SpoonacularResponse.json").mkString.replace(
+      """"amount": 6,
+        |          "unitShort": "servings",
+        |          "unitLong": "servings"""".stripMargin, """"ahahaha":"hahaha""""
+    ))
+
+    val backend = SttpBackendStub
+      .asynchronousFuture
+      .whenAnyRequest
+      .thenRespond(data)
+
+    val loader = new SpoonacularLoader[Future](backend, "someApi")
+
+    recoverToSucceededIf[CannotParseData](loader.getRecipe(10))
+  }
+
+  test("backend return error") {
+    val backend = SttpBackendStub
+      .asynchronousFuture
+      .whenAnyRequest
+      .thenRespond(Left(ParsingFailure("incorrect data", new IllegalArgumentException(""))))
+
+    val loader = new SpoonacularLoader[Future](backend, "someApi")
+    recoverToSucceededIf[ParsingFailure](loader.getRecipe(10))
   }
 
 }
