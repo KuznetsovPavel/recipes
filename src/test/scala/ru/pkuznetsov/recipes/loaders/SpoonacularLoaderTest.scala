@@ -6,7 +6,7 @@ import cats.implicits._
 import io.circe.ParsingFailure
 import io.circe.parser.parse
 import org.scalatest.{AsyncFunSuite, Matchers}
-import ru.pkuznetsov.recipes.model.Errors.CannotParseData
+import ru.pkuznetsov.recipes.model.Errors.{CannotParseData, SpoonacularError}
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 import sttp.client.testing._
 
@@ -80,7 +80,7 @@ class SpoonacularLoaderTest extends AsyncFunSuite with Matchers {
       .thenRespond(Left(ParsingFailure("incorrect data", new IllegalArgumentException(""))))
 
     val loader = new SpoonacularLoader[Future](backend, "someApi")
-    recoverToSucceededIf[ParsingFailure](loader.getRecipe(10))
+    recoverToSucceededIf[SpoonacularError](loader.getRecipe(10))
   }
 
 }
