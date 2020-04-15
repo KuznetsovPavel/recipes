@@ -5,17 +5,18 @@ import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
 import com.typesafe.scalalogging.StrictLogging
 import io.circe.Json
-import ru.pkuznetsov.recipes.loaders.SpoonacularLoader.Backend
+import ru.pkuznetsov.recipes.loaders.SpoonacularLoader.{Backend, RecipeId}
 import ru.pkuznetsov.recipes.model.Errors.SpoonacularError
 import ru.pkuznetsov.recipes.model.Recipe
 import sttp.client._
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.client.circe._
+import supertagged.TaggedType
 
 class SpoonacularLoader[F[_]](backend: Backend[F], apiKey: String)
                              (implicit monad: MonadError[F, Throwable]) extends StrictLogging {
 
-  def getRecipe(recipeId: Long): F[Recipe] = {
+  def getRecipe(recipeId: RecipeId): F[Recipe] = {
     val request = basicRequest
       .get(uri"https://api.spoonacular.com/recipes/$recipeId/information?apiKey=$apiKey")
       .response(asJson[Json])
@@ -33,6 +34,8 @@ class SpoonacularLoader[F[_]](backend: Backend[F], apiKey: String)
 
 object SpoonacularLoader {
   type Backend[F[_]] = SttpBackend[F, Nothing, Nothing]
+  object RecipeId extends TaggedType[Long]
+  type RecipeId = RecipeId.Type
 }
 
 object Test extends IOApp {
@@ -41,7 +44,7 @@ object Test extends IOApp {
     for {
       backend <- AsyncHttpClientCatsBackend[IO]()
       loader <- IO(new SpoonacularLoader(backend, "9be944945f3548d4854ea918c6e13963"))
-      range <- IO(100L to 2000L by 100)
+      range <- IO(100L to 300L by 100).map(RecipeId(_))
       recipes <- range.toList
         .traverse(loader.getRecipe(_).map(Option(_)).handleError(_ => None))
       measures <- IO(recipes.flatten.flatMap(_.ingredients).flatMap(_.unit))
