@@ -1,11 +1,10 @@
 package ru.pkuznetsov.recipes.dao
 
 import doobie.implicits._
-import ru.pkuznetsov.recipes.model.Ingredient
 
 object PostgresqlRecipeQuires {
 
-  val createRecipesTable =
+  val createRecipesTable: doobie.ConnectionIO[Int] =
     sql"""
          |CREATE TABLE IF NOT EXISTS recipes (
          |  id SERIAL PRIMARY KEY,
@@ -21,7 +20,7 @@ object PostgresqlRecipeQuires {
          |);
          |""".stripMargin.update.run
 
-  val createIngredientNamesTable =
+  val createIngredientNamesTable: doobie.ConnectionIO[Int] =
     sql"""
          |CREATE TABLE IF NOT EXISTS ingredient_names (
          |  id SERIAL PRIMARY KEY,
@@ -29,29 +28,47 @@ object PostgresqlRecipeQuires {
          |);
          |""".stripMargin.update.run
 
-  val createIngredientsTable =
+  val createIngredientsTable: doobie.ConnectionIO[Int] =
     sql"""
          |CREATE TABLE IF NOT EXISTS ingredients (
          |  recipeId SERIAL REFERENCES recipes (id),
          |  ingredientId SERIAL REFERENCES ingredient_names (id),
          |  amount REAL NOT NULL,
-         |  unit VARCHAR NOT NULL
+         |  unit VARCHAR
          |);
          |""".stripMargin.update.run
 
-  def insertIngredientIfNotExist(ingredient: Ingredient): doobie.ConnectionIO[Int] = {
-   sql"""
-              |INSERT INTO ingredient_names (ingredient)
-              |VALUES (${ingredient.name})
-              |ON CONFLICT (ingredient) DO NOTHING
-              |""".stripMargin.update.run
-  }
-
-  def getIngredientNameId(ingredient: Ingredient): doobie.Query0[Long] = {
+  def insertRecipe(uri: Option[String],
+                   summary: String,
+                   author: String,
+                   cookingTime: Option[Int],
+                   calories: Option[Double],
+                   protein: Option[Double],
+                   fat: Option[Double],
+                   carbohydrates: Option[Double],
+                   sugar: Option[Double]) =
     sql"""
-              |SELECT id FROM ingredient_names
-              |WHERE  ingredient = ${ingredient.name}
-              |""".stripMargin.query[Long]
+         |INSERT INTO recipes (uri, summary, author, cookingTime, calories, protein, fat, carbohydrates, sugar)
+         |VALUES ($uri, $summary, $author, $cookingTime, $calories, $protein, $fat, $carbohydrates, $sugar)
+         |""".stripMargin.update.withUniqueGeneratedKeys[Int]("id")
+
+  def insertIngredient(recipeId: Long, ingredientId: Long, amount: Double, `unit`: Option[String]) =
+    sql"""
+         |INSERT INTO ingredients (recipeId, ingredientId, amount, unit)
+         |VALUES ($recipeId, $ingredientId, $amount, $unit)
+         |""".stripMargin.update.run
+
+  def insertIngredientName(name: String) =
+    sql"""
+         |INSERT INTO ingredient_names (ingredient)
+         |VALUES ($name)
+         |""".stripMargin.update.withUniqueGeneratedKeys[Int]("id")
+
+  def selectIngredientNameId(name: String) = {
+    sql"""
+         |SELECT id FROM ingredient_names
+         |WHERE  ingredient = ${name}
+         |""".stripMargin.query[Int].option
   }
 
 }

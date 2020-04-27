@@ -1,10 +1,9 @@
 package ru.pkuznetsov.recipes.dao
 
 import cats.effect.{Blocker, ExitCode, IO, IOApp, Resource}
-import cats.implicits._
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
-import ru.pkuznetsov.recipes.model.Ingredient
+import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 
 import scala.concurrent.ExecutionContext
 
@@ -25,15 +24,13 @@ object Test extends IOApp {
         )
       } yield xa
 
-    val ingredients = List(Ingredient(0, "solt", 1, Some("measure")),
-      Ingredient(0, "solt1", 1, None),
-      Ingredient(0, "solt2", 14.3, Some("measure")),
-      Ingredient(0, "solt4", 15.3, Some("measure3"))
-    )
+    val recipe = Recipe(0, "pizza", None, "it is perfect", "Pavel", Some(40), Some(100), None, None, Some(33.3), Some(12.34),
+      List(Ingredient(0, "name1", 12.34, None), Ingredient(0, "name2", 222.34, Some("uunit"))))
+
     val dao = new PostgresqlRecipeDao[IO](transactor)
     for {
       _ <- dao.createTables
-      ids <- ingredients.traverse(dao.insertIngredient)
+      ids <- dao.insertRecipe(recipe)
       _ <- IO(println(ids))
     } yield ExitCode.Success
   }

@@ -5,7 +5,7 @@ import cats.effect.{Bracket, Resource}
 import cats.implicits._
 import doobie.hikari.HikariTransactor
 import doobie.implicits._
-import ru.pkuznetsov.recipes.model.Ingredient
+import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 
 class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])
                                (implicit bracket: Bracket[F, Throwable],
@@ -19,10 +19,20 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])
     } yield ()
   }
 
-  def insertIngredient(ingredient: Ingredient): F[Long] = transactor.use { transactor =>
+  def insertRecipe(recipe: Recipe): F[Int] = transactor.use { transactor =>
     for {
-      x <- PostgresqlRecipeQuires.insertIngredientIfNotExist(ingredient).transact(transactor)
-      id <- PostgresqlRecipeQuires.getIngredientNameId(ingredient).unique.transact(transactor)
-    } yield id
+      recipeId <- PostgresqlRecipeQuires.insertRecipe(recipe.uri.map(_.toString), recipe.summary, recipe.author, recipe.cookingTime, recipe.calories, recipe.protein, recipe.fat, recipe.carbohydrates,
+        recipe.sugar).transact(transactor)
+      _ <- recipe.ingredients.traverse(insertIngredient(_, recipeId))
+    } yield recipeId
+  }
+
+  def insertIngredient(ingredient: Ingredient, recipeId: Int): F[Unit] = transactor.use { transactor =>
+    for {
+      optIngNameId <- PostgresqlRecipeQuires.selectIngredientNameId(ingredient.name).transact(transactor)
+      ingNameId <- if (optIngNameId.isEmpty) PostgresqlRecipeQuires.insertIngredientName(ingredient.name).transact(transactor) else
+        monad.pure(optIngNameId.get)
+      _ <- PostgresqlRecipeQuires.insertIngredient(recipeId, ingNameId, ingredient.amount, ingredient.unit).transact(transactor)
+    } yield ()
   }
 }
