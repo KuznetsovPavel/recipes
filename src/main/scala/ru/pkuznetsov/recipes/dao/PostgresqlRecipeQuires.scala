@@ -1,6 +1,7 @@
 package ru.pkuznetsov.recipes.dao
 
 import doobie.implicits._
+import ru.pkuznetsov.recipes.model.Ingredient
 
 object PostgresqlRecipeQuires {
 
@@ -24,7 +25,7 @@ object PostgresqlRecipeQuires {
     sql"""
          |CREATE TABLE IF NOT EXISTS ingredient_names (
          |  id SERIAL PRIMARY KEY,
-         |  ingredient VARCHAR NOT NULL
+         |  ingredient VARCHAR UNIQUE NOT NULL
          |);
          |""".stripMargin.update.run
 
@@ -37,5 +38,20 @@ object PostgresqlRecipeQuires {
          |  unit VARCHAR NOT NULL
          |);
          |""".stripMargin.update.run
+
+  def insertIngredientIfNotExist(ingredient: Ingredient): doobie.ConnectionIO[Int] = {
+   sql"""
+              |INSERT INTO ingredient_names (ingredient)
+              |VALUES (${ingredient.name})
+              |ON CONFLICT (ingredient) DO NOTHING
+              |""".stripMargin.update.run
+  }
+
+  def getIngredientNameId(ingredient: Ingredient): doobie.Query0[Long] = {
+    sql"""
+              |SELECT id FROM ingredient_names
+              |WHERE  ingredient = ${ingredient.name}
+              |""".stripMargin.query[Long]
+  }
 
 }
