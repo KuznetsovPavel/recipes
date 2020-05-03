@@ -24,8 +24,20 @@ object Test extends IOApp {
         )
       } yield xa
 
-    val recipe = Recipe(0, "pizza", None, "it is perfect", "Pavel", Some(40), Some(100), None, None, Some(33.3), Some(12.34),
-      List(Ingredient(0, "name1", 12.34, None), Ingredient(0, "name2", 222.34, Some("uunit"))))
+    val recipe = Recipe(
+      0,
+      "pizza",
+      None,
+      "it is perfect",
+      "Pavel",
+      Some(40),
+      Some(100),
+      None,
+      None,
+      Some(33.3),
+      Some(12.34),
+      List(Ingredient(0, "name1", 12.34, None), Ingredient(0, "name2", 222.34, Some("uunit")))
+    )
 
     val dao = new PostgresqlRecipeDao[IO](transactor)
     for {
