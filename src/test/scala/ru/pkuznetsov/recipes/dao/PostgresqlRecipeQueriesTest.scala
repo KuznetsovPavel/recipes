@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext
 
 object DbTest extends Tag("DbTest")
 
-class PostgresqlRecipeQueriesTest extends FunSuite with Matchers with doobie.scalatest.IOChecker {
+class PostgresqlRecipeQuiresTest extends FunSuite with Matchers with doobie.scalatest.IOChecker {
   implicit val cs = IO.contextShift(ExecutionContext.global)
 
   override def transactor = Transactor.fromDriverManager[IO](
@@ -34,29 +34,39 @@ class PostgresqlRecipeQueriesTest extends FunSuite with Matchers with doobie.sca
   test("insert recipe", Slow, DbTest) {
     check(
       PostgresqlRecipeQueries.insertRecipe(
-        "pizza",
-        None,
-        "it is perfect",
-        "Pavel",
-        Some(40),
-        Some(100.0),
-        None,
-        None,
-        Some(33.3),
-        Some(12.34)
-      )
+        RecipeRow(
+          0,
+          "pizza",
+          None,
+          "it is perfect",
+          "Pavel",
+          Some(40),
+          Some(100.0),
+          None,
+          None,
+          Some(33.3),
+          Some(12.34)
+        ))
     )
   }
 
+  test("select recipe", Slow, DbTest) {
+    check(PostgresqlRecipeQueries.selectRecipe(10))
+  }
+
   test("insert ingredient", Slow, DbTest) {
-    check(PostgresqlRecipeQueries.insertIngredient(10, 100, 123.23, Some("ml")))
+    check(PostgresqlRecipeQueries.insertIngredient(IngredientRow(10, 100, 123.23, Some("ml"))))
+  }
+
+  test("select ingredient", Slow, DbTest) {
+    check(PostgresqlRecipeQueries.selectIngredient(10))
   }
 
   test("insert ingredient name", Slow, DbTest) {
     check(PostgresqlRecipeQueries.insertIngredientName("banana"))
   }
 
-  test("select ingredient", Slow, DbTest) {
+  test("select ingredient name", Slow, DbTest) {
     check(PostgresqlRecipeQueries.selectIngredientNameId("banana"))
   }
 

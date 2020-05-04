@@ -50,11 +50,11 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
   def selectRecipe(recipeId: Int): F[Recipe] = {
     transactor.use { transactor =>
       for {
-        recipeRow <- PostgresqlRecipeQuires.selectRecipe(recipeId).option.transact(transactor)
-        ingRows <- PostgresqlRecipeQuires.selectIngredient(recipeId).to[List].transact(transactor)
+        recipeRow <- PostgresqlRecipeQueries.selectRecipe(recipeId).option.transact(transactor)
+        ingRows <- PostgresqlRecipeQueries.selectIngredient(recipeId).to[List].transact(transactor)
         names <- ingRows
           .map(_.ingredientId)
-          .traverse(id => PostgresqlRecipeQuires.selectIngredientName(id).option)
+          .traverse(id => PostgresqlRecipeQueries.selectIngredientName(id).option)
           .transact(transactor)
       } yield createRecipeFrom(recipeRow, ingRows, names.flatten.toMap)
 
