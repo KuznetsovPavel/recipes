@@ -9,7 +9,7 @@ import io.circe.{Decoder, Encoder, Json}
 
 import scala.util.Try
 
-final case class Recipe(id: Long,
+final case class Recipe(id: Int,
                         name: String,
                         uri: Option[URI],
                         summary: String,
@@ -71,7 +71,7 @@ object Recipe {
             }
 
         Recipe(
-          id = 0L,
+          id = 0,
           name = getOpt("title").flatMap(_.asString).get,
           uri = getOpt("sourceUrl").flatMap(_.asString).map(URI.create),
           summary = getOpt("summary")

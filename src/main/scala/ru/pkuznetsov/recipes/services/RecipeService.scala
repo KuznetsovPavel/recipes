@@ -6,5 +6,5 @@ import ru.pkuznetsov.recipes.model.Recipe
 class RecipeService[F[_]](dao: PostgresqlRecipeDao[F]) {
 
   def save(recipe: Recipe): F[Int] = dao.insertRecipe(recipe)
-
+//  def get(id: String): F[Recipe] = dao
 }

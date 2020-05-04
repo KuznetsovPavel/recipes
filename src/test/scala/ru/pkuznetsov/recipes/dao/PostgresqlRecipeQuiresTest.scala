@@ -31,29 +31,39 @@ class PostgresqlRecipeQuiresTest extends FunSuite with Matchers with doobie.scal
   test("insert recipe") {
     check(
       PostgresqlRecipeQuires.insertRecipe(
-        "pizza",
-        None,
-        "it is perfect",
-        "Pavel",
-        Some(40),
-        Some(100.0),
-        None,
-        None,
-        Some(33.3),
-        Some(12.34)
-      )
+        RecipeRow(
+          0,
+          "pizza",
+          None,
+          "it is perfect",
+          "Pavel",
+          Some(40),
+          Some(100.0),
+          None,
+          None,
+          Some(33.3),
+          Some(12.34)
+        ))
     )
   }
 
+  test("select recipe") {
+    check(PostgresqlRecipeQuires.selectRecipe(10))
+  }
+
   test("insert ingredient") {
-    check(PostgresqlRecipeQuires.insertIngredient(10, 100, 123.23, Some("ml")))
+    check(PostgresqlRecipeQuires.insertIngredient(IngredientRow(10, 100, 123.23, Some("ml"))))
+  }
+
+  test("select ingredient") {
+    check(PostgresqlRecipeQuires.selectIngredient(10))
   }
 
   test("insert ingredient name") {
     check(PostgresqlRecipeQuires.insertIngredientName("banana"))
   }
 
-  test("select ingredient") {
+  test("select ingredient name") {
     check(PostgresqlRecipeQuires.selectIngredientNameId("banana"))
   }
 

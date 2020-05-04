@@ -1,14 +1,21 @@
-package ru.pkuznetsov.recipes.dao
+package ru.pkuznetsov.app
 
 import cats.effect.{Blocker, ExitCode, IO, IOApp, Resource}
+import cats.implicits._
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
-import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
+import org.http4s.implicits._
+import org.http4s.server.Router
+import org.http4s.server.blaze.BlazeServerBuilder
+import ru.pkuznetsov.recipes.api.RecipeController
+import ru.pkuznetsov.recipes.dao.PostgresqlRecipeDao
+import ru.pkuznetsov.recipes.services.RecipeService
 
 import scala.concurrent.ExecutionContext
 
-object Test extends IOApp {
+object AppRunner extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
+
     implicit val ec = ExecutionContext.global
     val transactor: Resource[IO, HikariTransactor[IO]] =
       for {
@@ -24,26 +31,18 @@ object Test extends IOApp {
         )
       } yield xa
 
-    val recipe = Recipe(
-      0,
-      "pizza",
-      None,
-      "it is perfect",
-      "Pavel",
-      Some(40),
-      Some(100),
-      None,
-      None,
-      Some(33.3),
-      Some(12.34),
-      List(Ingredient(0, "name1", 12.34, None), Ingredient(0, "name2", 222.34, Some("uunit")))
-    )
-
     val dao = new PostgresqlRecipeDao[IO](transactor)
-    for {
-      _ <- dao.createTables
-      ids <- dao.insertRecipe(recipe)
-      _ <- IO(println(ids))
-    } yield ExitCode.Success
+    dao.createTables.unsafeRunSync()
+    val service = new RecipeService[IO](dao)
+    val httpApp = Router("/" -> new RecipeController[IO](service).routes).orNotFound
+
+    BlazeServerBuilder[IO]
+      .bindHttp(8080, "localhost")
+      .withHttpApp(httpApp)
+      .serve
+      .compile
+      .drain
+      .as(ExitCode.Success)
   }
+
 }

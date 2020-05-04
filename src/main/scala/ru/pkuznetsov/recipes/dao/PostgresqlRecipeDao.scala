@@ -7,6 +7,8 @@ import doobie.hikari.HikariTransactor
 import doobie.implicits._
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 
+import scala.language.implicitConversions
+
 class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
     implicit bracket: Bracket[F, Throwable],
     monad: MonadError[F, Throwable]
@@ -23,23 +25,49 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
   def insertRecipe(recipe: Recipe): F[Int] = transactor.use { transactor =>
     for {
       recipeId <- PostgresqlRecipeQuires
-        .insertRecipe(
-          recipe.name,
-          recipe.uri.map(_.toString),
-          recipe.summary,
-          recipe.author,
-          recipe.cookingTime,
-          recipe.calories,
-          recipe.protein,
-          recipe.fat,
-          recipe.carbohydrates,
-          recipe.sugar
-        )
+        .insertRecipe(recipe)
         .withUniqueGeneratedKeys[Int]("id")
         .transact(transactor)
       _ <- recipe.ingredients.traverse(insertIngredient(_, recipeId))
     } yield recipeId
   }
+
+  implicit def recipe2RecipeRow(recipe: Recipe): RecipeRow =
+    RecipeRow(
+      recipe.id,
+      recipe.name,
+      recipe.uri.map(_.toString),
+      recipe.summary,
+      recipe.author,
+      recipe.cookingTime,
+      recipe.calories,
+      recipe.protein,
+      recipe.fat,
+      recipe.carbohydrates,
+      recipe.sugar
+    )
+
+  def selectRecipe(recipeId: Int): F[Recipe] = {
+    transactor.use { transactor =>
+      for {
+        recipeRow <- PostgresqlRecipeQuires.selectRecipe(recipeId).option.transact(transactor)
+        ingRows <- PostgresqlRecipeQuires.selectIngredient(recipeId).to[List].transact(transactor)
+        names <- ingRows
+          .map(_.ingredientId)
+          .traverse(id => PostgresqlRecipeQuires.selectIngredientName(id).option)
+          .transact(transactor)
+      } yield createRecipeFrom(recipeRow, ingRows, names.flatten.toMap)
+
+    }
+  }
+
+  def createRecipeFrom(recipeRow: Option[RecipeRow],
+                       ingredients: List[IngredientRow],
+                       names: Map[Int, String]): Recipe = ??? //{
+//    val ings = ingredients.map {row =>
+//      Ingredient(row.ingredientId, row.)
+//    }
+//  }
 
   def insertIngredient(ingredient: Ingredient, recipeId: Int): F[Unit] = {
     def getIngNameId =
@@ -54,7 +82,7 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
 
     def insertIng(ingNameId: Int) =
       PostgresqlRecipeQuires
-        .insertIngredient(recipeId, ingNameId, ingredient.amount, ingredient.unit)
+        .insertIngredient(IngredientRow(recipeId, ingNameId, ingredient.amount, ingredient.unit))
         .run
 
     transactor.use { transactor =>
