@@ -2,7 +2,7 @@ package ru.pkuznetsov.recipes.dao
 
 import doobie.implicits._
 
-object PostgresqlRecipeQuires {
+object PostgresqlRecipeQueries {
 
   def createRecipesTable: doobie.Update0 =
     sql"""

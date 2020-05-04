@@ -16,15 +16,15 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
 
   def createTables: F[Unit] = transactor.use { transactor =>
     for {
-      _ <- PostgresqlRecipeQuires.createRecipesTable.run.transact(transactor)
-      _ <- PostgresqlRecipeQuires.createIngredientNamesTable.run.transact(transactor)
-      _ <- PostgresqlRecipeQuires.createIngredientsTable.run.transact(transactor)
+      _ <- PostgresqlRecipeQueries.createRecipesTable.run.transact(transactor)
+      _ <- PostgresqlRecipeQueries.createIngredientNamesTable.run.transact(transactor)
+      _ <- PostgresqlRecipeQueries.createIngredientsTable.run.transact(transactor)
     } yield ()
   }
 
   def insertRecipe(recipe: Recipe): F[Int] = transactor.use { transactor =>
     for {
-      recipeId <- PostgresqlRecipeQuires
+      recipeId <- PostgresqlRecipeQueries
         .insertRecipe(recipe)
         .withUniqueGeneratedKeys[Int]("id")
         .transact(transactor)
@@ -71,17 +71,17 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
 
   def insertIngredient(ingredient: Ingredient, recipeId: Int): F[Unit] = {
     def getIngNameId =
-      PostgresqlRecipeQuires
+      PostgresqlRecipeQueries
         .selectIngredientNameId(ingredient.name)
         .option
 
     def insertIngName =
-      PostgresqlRecipeQuires
+      PostgresqlRecipeQueries
         .insertIngredientName(ingredient.name)
         .withUniqueGeneratedKeys[Int]("id")
 
     def insertIng(ingNameId: Int) =
-      PostgresqlRecipeQuires
+      PostgresqlRecipeQueries
         .insertIngredient(IngredientRow(recipeId, ingNameId, ingredient.amount, ingredient.unit))
         .run
 
