@@ -53,7 +53,7 @@ class SpoonacularLoaderTest extends AsyncFunSuite with Matchers {
 
     val loader = new SpoonacularLoader[Future](backend, "someApi")
 
-    loader.getRecipe(RecipeId(10L)).map { result =>
+    loader.getRecipe(SpoonacularRecipeId(10L)).map { result =>
       result shouldBe recipe
     }
   }
@@ -75,7 +75,7 @@ class SpoonacularLoaderTest extends AsyncFunSuite with Matchers {
 
     val loader = new SpoonacularLoader[Future](backend, "someApi")
 
-    recoverToSucceededIf[CannotParseData](loader.getRecipe(RecipeId(10L)))
+    recoverToSucceededIf[CannotParseData](loader.getRecipe(SpoonacularRecipeId(10L)))
   }
 
   test("backend return error") {
@@ -83,7 +83,7 @@ class SpoonacularLoaderTest extends AsyncFunSuite with Matchers {
       .thenRespond(Left(ParsingFailure("incorrect data", new IllegalArgumentException(""))))
 
     val loader = new SpoonacularLoader[Future](backend, "someApi")
-    recoverToSucceededIf[SpoonacularError](loader.getRecipe(RecipeId(10L)))
+    recoverToSucceededIf[SpoonacularError](loader.getRecipe(SpoonacularRecipeId(10L)))
   }
 
 }

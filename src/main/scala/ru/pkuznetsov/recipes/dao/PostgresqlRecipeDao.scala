@@ -10,6 +10,7 @@ import doobie.free.connection
 import doobie.hikari.HikariTransactor
 import doobie.implicits.toConnectionIOOps
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
+import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 
 import scala.language.implicitConversions
 
@@ -36,7 +37,7 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]], ma
       _ <- recipe.ingredients.traverse(insertIngredient(_, recipeId))
     } yield recipeId
 
-  def selectRecipe(recipeId: Int): F[Recipe] = {
+  def selectRecipe(recipeId: RecipeId): F[Recipe] = {
     val fromTable: F[(Option[RecipeRow], List[IngredientRow], Map[Int, String])] = for {
       recipeRowOpt <- PostgresqlRecipeQueries.selectRecipe(recipeId).option
       ingRows <- PostgresqlRecipeQueries.selectIngredient(recipeId).to[List]

@@ -6,6 +6,7 @@ import cats.instances.future._
 import org.scalatest.{AsyncFunSuite, Matchers}
 import ru.pkuznetsov.recipes.model.Errors.{CannotFindIngredientName, CannotParseURI, RecipeNotExist}
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
+import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 
 import scala.concurrent.Future
 
@@ -51,23 +52,23 @@ class RecipeTableManagerTest extends AsyncFunSuite with Matchers {
   )
 
   test("correct data") {
-    manager.createRecipeFrom(0, Some(recipeRow), ingredients, names).map { result =>
+    manager.createRecipeFrom(RecipeId(0), Some(recipeRow), ingredients, names).map { result =>
       result shouldBe recipe
     }
   }
 
   test("no recipe") {
-    recoverToSucceededIf[RecipeNotExist](manager.createRecipeFrom(0, None, ingredients, names))
+    recoverToSucceededIf[RecipeNotExist](manager.createRecipeFrom(RecipeId(0), None, ingredients, names))
   }
 
   test("no ingredient name") {
     recoverToSucceededIf[CannotFindIngredientName](
-      manager.createRecipeFrom(0, Some(recipeRow), ingredients, names.removed(1)))
+      manager.createRecipeFrom(RecipeId(0), Some(recipeRow), ingredients, names.removed(1)))
   }
 
   test("incorrect uri") {
     recoverToSucceededIf[CannotParseURI](
-      manager.createRecipeFrom(0, Some(recipeRow.copy(uri = Some("!@$%"))), ingredients, names))
+      manager.createRecipeFrom(RecipeId(0), Some(recipeRow.copy(uri = Some("!@$%"))), ingredients, names))
   }
 
 }

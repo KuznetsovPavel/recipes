@@ -10,7 +10,7 @@ import cats.syntax.monadError._
 import cats.syntax.traverse._
 import com.typesafe.scalalogging.StrictLogging
 import io.circe.Json
-import ru.pkuznetsov.recipes.loaders.SpoonacularLoader.{Backend, RecipeId}
+import ru.pkuznetsov.recipes.loaders.SpoonacularLoader.{Backend, SpoonacularRecipeId}
 import ru.pkuznetsov.recipes.model.Errors.SpoonacularError
 import ru.pkuznetsov.recipes.model.Recipe
 import sttp.client._
@@ -21,7 +21,7 @@ import supertagged.TaggedType
 class SpoonacularLoader[F[_]](backend: Backend[F], apiKey: String)(implicit monad: MonadError[F, Throwable])
     extends StrictLogging {
 
-  def getRecipe(recipeId: RecipeId): F[Recipe] = {
+  def getRecipe(recipeId: SpoonacularRecipeId): F[Recipe] = {
     val request = basicRequest
       .get(uri"https://api.spoonacular.com/recipes/$recipeId/information?apiKey=$apiKey")
       .response(asJson[Json])
@@ -40,8 +40,8 @@ class SpoonacularLoader[F[_]](backend: Backend[F], apiKey: String)(implicit mona
 
 object SpoonacularLoader {
   type Backend[F[_]] = SttpBackend[F, Nothing, Nothing]
-  object RecipeId extends TaggedType[Long]
-  type RecipeId = RecipeId.Type
+  object SpoonacularRecipeId extends TaggedType[Long]
+  type SpoonacularRecipeId = SpoonacularRecipeId.Type
 }
 
 object Test extends IOApp {
@@ -50,7 +50,7 @@ object Test extends IOApp {
     for {
       backend <- AsyncHttpClientCatsBackend[IO]()
       loader <- IO(new SpoonacularLoader(backend, "9be944945f3548d4854ea918c6e13963"))
-      range <- IO(100L to 300L by 100).map(RecipeId(_))
+      range <- IO(100L to 300L by 100).map(SpoonacularRecipeId(_))
       recipes <- range.toList
         .traverse(loader.getRecipe(_).map(Option(_)).handleError(_ => None))
       measures <- IO(recipes.flatten.flatMap(_.ingredients).flatMap(_.unit))

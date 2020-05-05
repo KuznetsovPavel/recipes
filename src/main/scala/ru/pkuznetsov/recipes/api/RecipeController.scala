@@ -13,6 +13,7 @@ import ru.pkuznetsov.core.Http4sController
 import ru.pkuznetsov.recipes.model.Errors.IncorrectRecipeId
 import ru.pkuznetsov.recipes.model.Recipe
 import ru.pkuznetsov.recipes.services.RecipeService
+import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 
 class RecipeController[F[_]: Applicative: Defer: Sync](service: RecipeService[F])(
     implicit monad: MonadError[F, Throwable])
@@ -27,7 +28,7 @@ class RecipeController[F[_]: Applicative: Defer: Sync](service: RecipeService[F]
   def getRecipeById(id: String): F[Response[F]] =
     for {
       recipeId <- monad.catchNonFatal(id.toInt).adaptError(_ => IncorrectRecipeId(id))
-      recipe <- service.get(recipeId)
+      recipe <- service.get(RecipeId(recipeId))
       result <- Ok(recipe.asJson)
     } yield result
 

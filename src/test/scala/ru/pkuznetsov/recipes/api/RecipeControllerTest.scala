@@ -9,6 +9,7 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.{FunSuite, Matchers}
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 import ru.pkuznetsov.recipes.services.RecipeService
+import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 
 class RecipeControllerTest extends FunSuite with Matchers with MockFactory {
 
@@ -31,7 +32,7 @@ class RecipeControllerTest extends FunSuite with Matchers with MockFactory {
 
   test("get recipe by id") {
     val service: RecipeService[IO] = mock[RecipeService[IO]]
-    service.get _ expects 10 returns IO.pure(recipe)
+    service.get _ expects RecipeId(10) returns IO.pure(recipe)
 
     val routes = new RecipeController[IO](service).routes.orNotFound
 
