@@ -9,7 +9,7 @@ import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 import ru.pkuznetsov.recipes.api.RecipeController
 import ru.pkuznetsov.recipes.dao.{PostgresqlRecipeDao, RecipeTableManager}
-import ru.pkuznetsov.recipes.services.RecipeService
+import ru.pkuznetsov.recipes.services.RecipeServiceImpl
 
 import scala.concurrent.ExecutionContext
 
@@ -34,7 +34,7 @@ object AppRunner extends IOApp {
     val daoManager = new RecipeTableManager[IO]()
     val dao = new PostgresqlRecipeDao[IO](transactor, daoManager)
     dao.createTables.unsafeRunSync()
-    val service = new RecipeService[IO](dao)
+    val service = new RecipeServiceImpl[IO](dao)
     val httpApp = Router("/" -> new RecipeController[IO](service).routes).orNotFound
 
     BlazeServerBuilder[IO]
