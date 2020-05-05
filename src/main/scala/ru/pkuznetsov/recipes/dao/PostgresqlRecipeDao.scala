@@ -1,10 +1,13 @@
 package ru.pkuznetsov.recipes.dao
 
+import java.net.URI
+
 import cats.MonadError
 import cats.effect.{Bracket, Resource}
 import cats.implicits._
 import doobie.hikari.HikariTransactor
 import doobie.implicits._
+import ru.pkuznetsov.recipes.model.Errors.{CannotFindIngredientName, CannotParseURI, RecipeNotExist}
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 
 import scala.language.implicitConversions
@@ -32,7 +35,7 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
     } yield recipeId
   }
 
-  implicit def recipe2RecipeRow(recipe: Recipe): RecipeRow =
+  private implicit def recipe2RecipeRow(recipe: Recipe): RecipeRow =
     RecipeRow(
       recipe.id,
       recipe.name,
@@ -48,26 +51,55 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
     )
 
   def selectRecipe(recipeId: Int): F[Recipe] = {
+
+    def recipeRow2Recipe(recipeRow: RecipeRow, uri: Option[URI], ings: List[Ingredient]) =
+      Recipe(
+        recipeRow.recipeId,
+        recipeRow.name,
+        uri,
+        recipeRow.summary,
+        recipeRow.author,
+        recipeRow.cookingTime,
+        recipeRow.calories,
+        recipeRow.protein,
+        recipeRow.fat,
+        recipeRow.carbohydrates,
+        recipeRow.sugar,
+        ings
+      )
+
+    def createRecipeFrom(recipeRow: RecipeRow,
+                         ingredients: List[IngredientRow],
+                         names: Map[Int, String]): F[Recipe] = {
+      val ings = ingredients.traverse { row =>
+        val ing = names.get(row.ingredientId).map { name =>
+          Ingredient(row.ingredientId, name, row.amount, row.`unit`)
+        }
+        monad.fromOption(ing, CannotFindIngredientName(row.ingredientId))
+      }
+
+      val uri = monad.catchNonFatal(recipeRow.uri.map(URI.create)).adaptError {
+        case _ => CannotParseURI(recipeRow.uri.get, recipeRow.recipeId)
+      }
+
+      monad.map2(uri, ings) {
+        case (uri, ingredients) => recipeRow2Recipe(recipeRow, uri, ingredients)
+      }
+    }
+
     transactor.use { transactor =>
       for {
-        recipeRow <- PostgresqlRecipeQueries.selectRecipe(recipeId).option.transact(transactor)
+        recipeRowOpt <- PostgresqlRecipeQueries.selectRecipe(recipeId).option.transact(transactor)
+        recipeRow <- monad.fromOption(recipeRowOpt, RecipeNotExist(recipeId))
         ingRows <- PostgresqlRecipeQueries.selectIngredient(recipeId).to[List].transact(transactor)
         names <- ingRows
           .map(_.ingredientId)
           .traverse(id => PostgresqlRecipeQueries.selectIngredientName(id).option)
           .transact(transactor)
-      } yield createRecipeFrom(recipeRow, ingRows, names.flatten.toMap)
-
+        recipe <- createRecipeFrom(recipeRow, ingRows, names.flatten.toMap)
+      } yield recipe
     }
   }
-
-  def createRecipeFrom(recipeRow: Option[RecipeRow],
-                       ingredients: List[IngredientRow],
-                       names: Map[Int, String]): Recipe = ??? //{
-//    val ings = ingredients.map {row =>
-//      Ingredient(row.ingredientId, row.)
-//    }
-//  }
 
   def insertIngredient(ingredient: Ingredient, recipeId: Int): F[Unit] = {
     def getIngNameId =
