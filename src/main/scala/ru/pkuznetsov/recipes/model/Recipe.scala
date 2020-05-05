@@ -3,9 +3,13 @@ package ru.pkuznetsov.recipes.model
 import java.net.URI
 
 import cats.MonadError
-import cats.implicits._
+import cats.effect.Sync
+import cats.instances.option._
+import cats.syntax.applicativeError._
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder, Json}
+import org.http4s.EntityDecoder
+import org.http4s.circe.jsonOf
 
 import scala.util.Try
 
@@ -30,6 +34,8 @@ object Ingredient {
 }
 
 object Recipe {
+  implicit def recipeDecoder[F[_]: Sync]: EntityDecoder[F, Recipe] = jsonOf[F, Recipe]
+
   implicit val decoder: Decoder[Recipe] = deriveDecoder[Recipe]
   implicit val encoder: Encoder[Recipe] = deriveEncoder[Recipe]
 

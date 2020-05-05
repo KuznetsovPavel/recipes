@@ -2,7 +2,7 @@ package ru.pkuznetsov.recipes.loaders
 
 import java.net.URI
 
-import cats.implicits._
+import cats.instances.future._
 import io.circe.ParsingFailure
 import io.circe.parser.parse
 import org.scalatest.{AsyncFunSuite, Matchers}

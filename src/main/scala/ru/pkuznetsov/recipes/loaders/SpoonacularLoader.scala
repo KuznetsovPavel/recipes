@@ -2,7 +2,12 @@ package ru.pkuznetsov.recipes.loaders
 
 import cats.MonadError
 import cats.effect.{ExitCode, IO, IOApp}
-import cats.implicits._
+import cats.instances.list._
+import cats.syntax.applicativeError._
+import cats.syntax.flatMap._
+import cats.syntax.functor._
+import cats.syntax.monadError._
+import cats.syntax.traverse._
 import com.typesafe.scalalogging.StrictLogging
 import io.circe.Json
 import ru.pkuznetsov.recipes.loaders.SpoonacularLoader.{Backend, RecipeId}
@@ -13,8 +18,8 @@ import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import sttp.client.circe._
 import supertagged.TaggedType
 
-class SpoonacularLoader[F[_]](backend: Backend[F], apiKey: String)
-                             (implicit monad: MonadError[F, Throwable]) extends StrictLogging {
+class SpoonacularLoader[F[_]](backend: Backend[F], apiKey: String)(implicit monad: MonadError[F, Throwable])
+    extends StrictLogging {
 
   def getRecipe(recipeId: RecipeId): F[Recipe] = {
     val request = basicRequest
@@ -23,7 +28,8 @@ class SpoonacularLoader[F[_]](backend: Backend[F], apiKey: String)
 
     for {
       response <- backend.send(request)
-      recipeJson <- monad.fromEither(response.body)
+      recipeJson <- monad
+        .fromEither(response.body)
         .adaptError { case ex => SpoonacularError(ex) }
       _ <- monad.pure(logger.debug(s"get recipe with id $recipeId, content: $recipeJson"))
       recipe <- Recipe.fromSpoonacularResponse[F](recipeJson)
