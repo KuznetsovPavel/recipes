@@ -8,4 +8,5 @@ object Errors {
   final case class RecipeNotExist(id: Int) extends Errors
   final case class CannotFindIngredientName(ingredientId: Int) extends Errors
   final case class CannotParseURI(uri: String, recipeId: Int) extends Errors
+  final case class IncorrectRecipeId(id: String) extends Errors
 }
