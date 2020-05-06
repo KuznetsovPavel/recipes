@@ -33,7 +33,6 @@ object AppRunner extends IOApp {
 
     val daoManager = new RecipeTableManager[IO]()
     val dao = new PostgresqlRecipeDao[IO](transactor, daoManager)
-    dao.createTables.unsafeRunSync()
     val service = new RecipeServiceImpl[IO](dao)
     val httpApp = Router("/" -> new RecipeController[IO](service).routes).orNotFound
 

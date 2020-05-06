@@ -22,13 +22,6 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]], ma
   implicit def connectionIO2F[A](transaction: Free[connection.ConnectionOp, A]): F[A] =
     transactor.use(transactor => transaction.transact(transactor))
 
-  def createTables: F[Unit] =
-    for {
-      _ <- PostgresqlRecipeQueries.createRecipesTable.run
-      _ <- PostgresqlRecipeQueries.createIngredientNamesTable.run
-      _ <- PostgresqlRecipeQueries.createIngredientsTable.run
-    } yield ()
-
   def insertRecipe(recipe: Recipe): F[Int] =
     for {
       recipeId <- PostgresqlRecipeQueries

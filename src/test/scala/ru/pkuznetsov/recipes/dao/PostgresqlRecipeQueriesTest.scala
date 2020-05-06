@@ -19,18 +19,6 @@ class PostgresqlRecipeQuiresTest extends FunSuite with Matchers with doobie.scal
     "password"
   )
 
-  test("create ingredients table", Slow, DbTest) {
-    check(PostgresqlRecipeQueries.createIngredientsTable)
-  }
-
-  test("create ingredient names table", Slow, DbTest) {
-    check(PostgresqlRecipeQueries.createIngredientNamesTable)
-  }
-
-  test("create recipes table", Slow, DbTest) {
-    check(PostgresqlRecipeQueries.createRecipesTable)
-  }
-
   test("insert recipe", Slow, DbTest) {
     check(
       PostgresqlRecipeQueries.insertRecipe(
@@ -67,6 +55,10 @@ class PostgresqlRecipeQuiresTest extends FunSuite with Matchers with doobie.scal
   }
 
   test("select ingredient name", Slow, DbTest) {
+    check(PostgresqlRecipeQueries.selectIngredientNameId("banana"))
+  }
+
+  test("select ingredient name id ", Slow, DbTest) {
     check(PostgresqlRecipeQueries.selectIngredientNameId("banana"))
   }
 
