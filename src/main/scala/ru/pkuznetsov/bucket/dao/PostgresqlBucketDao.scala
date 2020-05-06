@@ -1,3 +1,6 @@
 package ru.pkuznetsov.bucket.dao
 
-class PostgresqlBucketDao {}
+import cats.effect.Resource
+import doobie.hikari.HikariTransactor
+
+class PostgresqlBucketDao[F[_]](transactor: Resource[F, HikariTransactor[F]]) {}
