@@ -8,20 +8,15 @@ import cats.syntax.flatMap._
 import cats.syntax.traverse._
 import doobie.free.connection
 import doobie.hikari.HikariTransactor
-import doobie.implicits.toConnectionIOOps
+import ru.pkuznetsov.core.dao.{CommonPostgresQueries, Dao}
 import ru.pkuznetsov.core.model.Ingredient
 import ru.pkuznetsov.recipes.model.Recipe
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 
-import scala.language.implicitConversions
-
 class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]], manager: RecipeTableManager[F])(
     implicit bracket: Bracket[F, Throwable],
     monad: MonadError[F, Throwable]
-) {
-
-  implicit def connectionIO2F[A](transaction: Free[connection.ConnectionOp, A]): F[A] =
-    transactor.use(transactor => transaction.transact(transactor))
+) extends Dao[F](transactor) {
 
   def insertRecipe(recipe: Recipe): F[Int] =
     for {
@@ -37,7 +32,7 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]], ma
       ingRows <- PostgresqlRecipeQueries.selectIngredient(recipeId).to[List]
       names <- ingRows
         .map(_.ingredientId)
-        .traverse(id => PostgresqlRecipeQueries.selectIngredientName(id).option)
+        .traverse(id => CommonPostgresQueries.selectIngredientName(id).option)
     } yield (recipeRowOpt, ingRows, names.flatten.toMap)
 
     fromTable.flatMap {
@@ -46,26 +41,16 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]], ma
   }
 
   private def insertIngredient(ingredient: Ingredient, recipeId: Int): Free[connection.ConnectionOp, Int] = {
-    def getIngNameId =
-      PostgresqlRecipeQueries
-        .selectIngredientNameId(ingredient.name)
-        .option
-
-    def insertIngName: doobie.ConnectionIO[Int] =
-      PostgresqlRecipeQueries
-        .insertIngredientName(ingredient.name)
-        .withUniqueGeneratedKeys[Int]("id")
-
     def insertIng(ingNameId: Int) =
       PostgresqlRecipeQueries
         .insertIngredient(IngredientRow(recipeId, ingNameId, ingredient.amount, ingredient.unit))
         .run
 
     for {
-      optIngNameId <- getIngNameId
+      optIngNameId <- getIngNameId(ingredient.name)
       result <- optIngNameId match {
         case Some(value) => insertIng(value)
-        case None        => insertIngName.flatMap(insertIng)
+        case None        => insertIngName(ingredient.name).flatMap(insertIng)
       }
     } yield result
   }

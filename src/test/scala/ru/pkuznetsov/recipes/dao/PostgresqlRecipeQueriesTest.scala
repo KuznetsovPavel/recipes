@@ -3,13 +3,12 @@ package ru.pkuznetsov.recipes.dao
 import cats.effect.IO
 import doobie.util.transactor.Transactor
 import org.scalatest.tagobjects.Slow
-import org.scalatest.{FunSuite, Matchers, Tag}
+import org.scalatest.{FunSuite, Matchers}
+import ru.pkuznetsov.core.dao.DbTest
 
 import scala.concurrent.ExecutionContext
 
-object DbTest extends Tag("DbTest")
-
-class PostgresqlRecipeQuiresTest extends FunSuite with Matchers with doobie.scalatest.IOChecker {
+class PostgresqlRecipeQueriesTest extends FunSuite with Matchers with doobie.scalatest.IOChecker {
   implicit val cs = IO.contextShift(ExecutionContext.global)
 
   override def transactor = Transactor.fromDriverManager[IO](
@@ -48,18 +47,6 @@ class PostgresqlRecipeQuiresTest extends FunSuite with Matchers with doobie.scal
 
   test("select ingredient", Slow, DbTest) {
     check(PostgresqlRecipeQueries.selectIngredient(10))
-  }
-
-  test("insert ingredient name", Slow, DbTest) {
-    check(PostgresqlRecipeQueries.insertIngredientName("banana"))
-  }
-
-  test("select ingredient name", Slow, DbTest) {
-    check(PostgresqlRecipeQueries.selectIngredientNameId("banana"))
-  }
-
-  test("select ingredient name id ", Slow, DbTest) {
-    check(PostgresqlRecipeQueries.selectIngredientNameId("banana"))
   }
 
 }
