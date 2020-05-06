@@ -9,7 +9,8 @@ import cats.syntax.traverse._
 import doobie.free.connection
 import doobie.hikari.HikariTransactor
 import doobie.implicits.toConnectionIOOps
-import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
+import ru.pkuznetsov.core.model.Ingredient
+import ru.pkuznetsov.recipes.model.Recipe
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 
 import scala.language.implicitConversions

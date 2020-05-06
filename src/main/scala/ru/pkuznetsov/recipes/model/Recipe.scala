@@ -10,6 +10,7 @@ import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder, Json}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
+import ru.pkuznetsov.core.model.Ingredient
 
 import scala.util.Try
 
@@ -25,13 +26,6 @@ final case class Recipe(id: Int,
                         carbohydrates: Option[Double],
                         sugar: Option[Double],
                         ingredients: List[Ingredient])
-
-final case class Ingredient(id: Long, name: String, amount: Double, unit: Option[String])
-
-object Ingredient {
-  implicit val decoder: Decoder[Ingredient] = deriveDecoder[Ingredient]
-  implicit val encoder: Encoder[Ingredient] = deriveEncoder[Ingredient]
-}
 
 object Recipe {
   implicit def recipeDecoder[F[_]: Sync]: EntityDecoder[F, Recipe] = jsonOf[F, Recipe]

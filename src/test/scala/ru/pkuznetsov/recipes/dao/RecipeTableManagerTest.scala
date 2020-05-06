@@ -4,8 +4,9 @@ import java.net.URI
 
 import cats.instances.future._
 import org.scalatest.{AsyncFunSuite, Matchers}
+import ru.pkuznetsov.core.model.Ingredient
 import ru.pkuznetsov.recipes.model.Errors.{CannotFindIngredientName, CannotParseURI, RecipeNotExist}
-import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
+import ru.pkuznetsov.recipes.model.Recipe
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 
 import scala.concurrent.Future

@@ -8,8 +8,9 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.monadError._
 import cats.syntax.traverse._
+import ru.pkuznetsov.core.model.Ingredient
 import ru.pkuznetsov.recipes.model.Errors.{CannotFindIngredientName, CannotParseURI, RecipeNotExist}
-import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
+import ru.pkuznetsov.recipes.model.Recipe
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 
 class RecipeTableManager[F[_]](implicit monad: MonadError[F, Throwable]) {

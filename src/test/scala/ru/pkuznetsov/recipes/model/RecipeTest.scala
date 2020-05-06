@@ -6,6 +6,7 @@ import cats.effect.IO
 import io.circe.Json
 import io.circe.parser._
 import org.scalatest.{FunSuite, Matchers}
+import ru.pkuznetsov.core.model.Ingredient
 
 import scala.io.Source
 

@@ -7,7 +7,8 @@ import org.http4s.implicits._
 import org.http4s.{Method, Request, Status}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{FunSuite, Matchers}
-import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
+import ru.pkuznetsov.core.model.Ingredient
+import ru.pkuznetsov.recipes.model.Recipe
 import ru.pkuznetsov.recipes.services.RecipeService
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 

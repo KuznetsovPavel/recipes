@@ -1,4 +1,4 @@
-package ru.pkuznetsov.core
+package ru.pkuznetsov.core.api
 
 import cats.{Applicative, Defer}
 import org.http4s.HttpRoutes
