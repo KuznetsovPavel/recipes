@@ -27,16 +27,16 @@ class RecipeTest extends FunSuite with Matchers {
       carbohydrates = None,
       sugar = None,
       ingredients = List(
-        Ingredient(0L, "bell pepper", 6, Some("servings")),
-        Ingredient(0L, "chillies", 1, None),
-        Ingredient(0L, "coarse sea salt", 6, Some("servings")),
-        Ingredient(0L, "extra-virgin olive oil", 6, Some("servings")),
-        Ingredient(0L, "fresh anchovies", 500, Some("grams")),
-        Ingredient(0L, "fresh parsley", 6, Some("servings")),
-        Ingredient(0L, "fresh thyme", 6, Some("servings")),
-        Ingredient(0L, "garlic cloves", 1, None),
-        Ingredient(0L, "juice of lemon", 1, None),
-        Ingredient(0L, "sherry vinegar", 5, Some("Tbsps"))
+        Ingredient(0, "bell pepper", 6, Some("servings")),
+        Ingredient(0, "chillies", 1, None),
+        Ingredient(0, "coarse sea salt", 6, Some("servings")),
+        Ingredient(0, "extra-virgin olive oil", 6, Some("servings")),
+        Ingredient(0, "fresh anchovies", 500, Some("grams")),
+        Ingredient(0, "fresh parsley", 6, Some("servings")),
+        Ingredient(0, "fresh thyme", 6, Some("servings")),
+        Ingredient(0, "garlic cloves", 1, None),
+        Ingredient(0, "juice of lemon", 1, None),
+        Ingredient(0, "sherry vinegar", 5, Some("Tbsps"))
       )
     )
 

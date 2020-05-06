@@ -7,6 +7,9 @@ import doobie.util.ExecutionContexts
 import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
+import ru.pkuznetsov.bucket.api.BucketController
+import ru.pkuznetsov.bucket.dao.PostgresqlBucketDao
+import ru.pkuznetsov.bucket.services.BucketService
 import ru.pkuznetsov.recipes.api.RecipeController
 import ru.pkuznetsov.recipes.dao.{PostgresqlRecipeDao, RecipeTableManager}
 import ru.pkuznetsov.recipes.services.RecipeServiceImpl
@@ -31,10 +34,19 @@ object AppRunner extends IOApp {
         )
       } yield xa
 
-    val daoManager = new RecipeTableManager[IO]()
-    val dao = new PostgresqlRecipeDao[IO](transactor, daoManager)
-    val service = new RecipeServiceImpl[IO](dao)
-    val httpApp = Router("/" -> new RecipeController[IO](service).routes).orNotFound
+    val recipeService = {
+      val daoManager = new RecipeTableManager[IO]()
+      val dao = new PostgresqlRecipeDao[IO](transactor, daoManager)
+      new RecipeServiceImpl[IO](dao)
+    }
+
+    val bucketService = {
+      val dao = new PostgresqlBucketDao[IO](transactor)
+      new BucketService[IO](dao)
+    }
+
+    val httpApp = Router("/bucket" -> new BucketController[IO](bucketService).routes,
+                         "/recipes" -> new RecipeController[IO](recipeService).routes).orNotFound
 
     BlazeServerBuilder[IO]
       .bindHttp(8080, "localhost")

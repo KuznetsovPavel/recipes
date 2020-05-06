@@ -37,7 +37,7 @@ class RecipeControllerTest extends FunSuite with Matchers with MockFactory {
 
     val routes = new RecipeController[IO](service).routes.orNotFound
 
-    val response = routes.run(Request(method = Method.GET, uri = uri"/recipes/10")).unsafeRunSync()
+    val response = routes.run(Request(method = Method.GET, uri = uri"/10")).unsafeRunSync()
 
     response.status shouldBe Status.Ok
     response.as[Recipe].unsafeRunSync() shouldBe recipe

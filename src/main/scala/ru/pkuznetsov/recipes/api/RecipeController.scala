@@ -21,8 +21,8 @@ class RecipeController[F[_]: Applicative: Defer: Sync](service: RecipeService[F]
     with StrictLogging {
 
   override val routes: HttpRoutes[F] = HttpRoutes.of[F] {
-    case recipe @ POST -> Root / "recipes" => saveRecipe(recipe)
-    case GET -> Root / "recipes" / id      => getRecipeById(id)
+    case recipe @ POST -> Root => saveRecipe(recipe)
+    case GET -> Root / id      => getRecipeById(id)
   }
 
   def getRecipeById(id: String): F[Response[F]] =

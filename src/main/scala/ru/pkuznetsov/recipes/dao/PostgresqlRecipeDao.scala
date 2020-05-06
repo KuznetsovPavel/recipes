@@ -46,12 +46,6 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]], ma
         .insertIngredient(IngredientRow(recipeId, ingNameId, ingredient.amount, ingredient.unit))
         .run
 
-    for {
-      optIngNameId <- getIngNameId(ingredient.name)
-      result <- optIngNameId match {
-        case Some(value) => insertIng(value)
-        case None        => insertIngName(ingredient.name).flatMap(insertIng)
-      }
-    } yield result
+    checkIngNameAnd(ingredient)(insertIng)
   }
 }

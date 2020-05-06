@@ -60,7 +60,7 @@ object Recipe {
             }
             .map { json =>
               Ingredient(
-                id = 0L,
+                id = 0,
                 name = (json \\ "name").headOption.flatMap(_.asString).get,
                 amount = (json \\ "metric").flatMap(_ \\ "amount").flatMap(_.asNumber).map(_.toDouble).head,
                 unit = (json \\ "metric").flatMap(_ \\ "unitLong").flatMap(_.asString).headOption.flatMap {
