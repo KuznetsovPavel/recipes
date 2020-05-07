@@ -3,12 +3,13 @@ package ru.pkuznetsov.recipes.api
 import java.net.URI
 
 import cats.effect.IO
+import fs2.Chunk
+import io.circe.Printer
 import org.http4s.implicits._
-import org.http4s.{Method, Request, Status}
+import org.http4s.{EntityDecoder, Method, Request, Status}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{FunSuite, Matchers}
-import ru.pkuznetsov.core.model.Ingredient
-import ru.pkuznetsov.recipes.model.Recipe
+import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 import ru.pkuznetsov.recipes.services.RecipeService
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 
@@ -43,15 +44,23 @@ class RecipeControllerTest extends FunSuite with Matchers with MockFactory {
     response.as[Recipe].unsafeRunSync() shouldBe recipe
   }
 
-//  test("save recipe") {
-//    val service: RecipeService[IO] = mock[RecipeService[IO]]
-//    service.save _ expects recipe returns IO.pure(7)
-//
-//    val routes = new RecipeController[IO](service).routes.orNotFound
-//
-//    val response = routes.run(Request(method = Method.POST, uri = uri"/recipes")).unsafeRunSync()
-//
-//    response.status shouldBe Status.Ok
-//    response.as[Int].unsafeRunSync() shouldBe 7
-//  }
+  test("save recipe") {
+    val service: RecipeService[IO] = mock[RecipeService[IO]]
+    service.save _ expects recipe returns IO.pure(7)
+
+    val routes = new RecipeController[IO](service).routes.orNotFound
+    import fs2.Stream
+    import io.circe.syntax._
+
+    val en: Stream[IO, Byte] = Stream.chunk(Chunk.bytes(recipe.asJson.printWith(Printer.noSpaces).getBytes))
+    val response = routes
+      .run(Request(method = Method.POST, uri = uri"/", body = en))
+      .unsafeRunSync()
+
+    import org.http4s.circe.jsonOf
+    implicit val recipeDecoder: EntityDecoder[IO, Int] = jsonOf[IO, Int]
+
+    response.status shouldBe Status.Ok
+    response.as[Int].unsafeRunSync() shouldBe 7
+  }
 }

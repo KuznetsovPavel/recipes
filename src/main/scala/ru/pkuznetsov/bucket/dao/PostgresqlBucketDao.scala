@@ -5,21 +5,15 @@ import cats.instances.list._
 import cats.syntax.traverse._
 import doobie.hikari.HikariTransactor
 import ru.pkuznetsov.bucket.model.Bucket
-import ru.pkuznetsov.core.dao.Dao
+import ru.pkuznetsov.ingredients.dao.PostgresqlIngredientNamesDao
 
 class PostgresqlBucketDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
     implicit bracket: Bracket[F, Throwable])
-    extends Dao[F](transactor) {
+    extends PostgresqlIngredientNamesDao[F](transactor) {
 
-  def addOrUpdateBucket(bucket: Bucket): F[Unit] = {
-    def insertBucketEntry(entry: BucketEntry) =
-      PostgresqlBucketQueries.insertBucketEntry(entry).run
-
+  def addOrUpdateBucket(bucket: Bucket): F[Unit] =
     bucket.ingredients
-      .traverse { ing =>
-        checkIngNameAnd(ing)(id => insertBucketEntry(BucketEntry(id, ing.amount, ing.unit)))
-      }
+      .traverse(ing => PostgresqlBucketQueries.insertBucketEntry(ing).run)
       .map(_ => ())
-  }
 
 }

@@ -8,9 +8,8 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.monadError._
 import cats.syntax.traverse._
-import ru.pkuznetsov.core.model.Ingredient
-import ru.pkuznetsov.recipes.model.Errors.{CannotFindIngredientName, CannotParseURI, RecipeNotExist}
-import ru.pkuznetsov.recipes.model.Recipe
+import ru.pkuznetsov.core.model.Errors.{CannotFindIngredients, CannotParseURI, RecipeNotExist}
+import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 
 class RecipeTableManager[F[_]](implicit monad: MonadError[F, Throwable]) {
@@ -24,7 +23,7 @@ class RecipeTableManager[F[_]](implicit monad: MonadError[F, Throwable]) {
         val ing = names.get(row.ingredientId).map { name =>
           Ingredient(row.ingredientId, name, row.amount, row.`unit`)
         }
-        monad.fromOption(ing, CannotFindIngredientName(row.ingredientId))
+        monad.fromOption(ing, CannotFindIngredients(List(row.ingredientId.toString)))
       }
     }
 

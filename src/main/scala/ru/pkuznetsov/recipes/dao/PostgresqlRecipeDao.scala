@@ -8,9 +8,9 @@ import cats.syntax.flatMap._
 import cats.syntax.traverse._
 import doobie.free.connection
 import doobie.hikari.HikariTransactor
-import ru.pkuznetsov.core.dao.{CommonPostgresQueries, Dao}
-import ru.pkuznetsov.core.model.Ingredient
-import ru.pkuznetsov.recipes.model.Recipe
+import ru.pkuznetsov.core.dao.Dao
+import ru.pkuznetsov.ingredients.dao.IngredientNamesPostgresQueries
+import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 
 class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]], manager: RecipeTableManager[F])(
@@ -32,7 +32,7 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]], ma
       ingRows <- PostgresqlRecipeQueries.selectIngredient(recipeId).to[List]
       names <- ingRows
         .map(_.ingredientId)
-        .traverse(id => CommonPostgresQueries.selectIngredientName(id).option)
+        .traverse(id => IngredientNamesPostgresQueries.selectById(id).option)
     } yield (recipeRowOpt, ingRows, names.flatten.toMap)
 
     fromTable.flatMap {
@@ -41,11 +41,8 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]], ma
   }
 
   private def insertIngredient(ingredient: Ingredient, recipeId: Int): Free[connection.ConnectionOp, Int] = {
-    def insertIng(ingNameId: Int) =
-      PostgresqlRecipeQueries
-        .insertIngredient(IngredientRow(recipeId, ingNameId, ingredient.amount, ingredient.unit))
-        .run
-
-    checkIngNameAnd(ingredient)(insertIng)
+    PostgresqlRecipeQueries
+      .insertIngredient(IngredientRow(recipeId, ingredient.id, ingredient.amount, ingredient.unit))
+      .run
   }
 }

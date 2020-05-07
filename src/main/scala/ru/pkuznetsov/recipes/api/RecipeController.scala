@@ -10,7 +10,7 @@ import io.circe.syntax._
 import org.http4s.circe.jsonEncoder
 import org.http4s.{HttpRoutes, Request, Response}
 import ru.pkuznetsov.core.api.Http4sController
-import ru.pkuznetsov.recipes.model.Errors.IncorrectRecipeId
+import ru.pkuznetsov.core.model.Errors.IncorrectRecipeId
 import ru.pkuznetsov.recipes.model.Recipe
 import ru.pkuznetsov.recipes.services.RecipeService
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId

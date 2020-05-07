@@ -10,7 +10,7 @@ import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder, Json}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
-import ru.pkuznetsov.core.model.Ingredient
+import ru.pkuznetsov.core.model.Errors
 
 import scala.util.Try
 
@@ -96,5 +96,11 @@ object Recipe {
       .handleErrorWith { err =>
         monad.raiseError(Errors.CannotParseData(err))
       }
+}
 
+final case class Ingredient(id: Int, name: String, amount: Double, unit: Option[String])
+
+object Ingredient {
+  implicit val decoder: Decoder[Ingredient] = deriveDecoder[Ingredient]
+  implicit val encoder: Encoder[Ingredient] = deriveEncoder[Ingredient]
 }

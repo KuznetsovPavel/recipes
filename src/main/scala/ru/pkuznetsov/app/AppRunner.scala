@@ -10,6 +10,7 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import ru.pkuznetsov.bucket.api.BucketController
 import ru.pkuznetsov.bucket.dao.PostgresqlBucketDao
 import ru.pkuznetsov.bucket.services.BucketService
+import ru.pkuznetsov.ingredients.dao.PostgresqlIngredientNamesDao
 import ru.pkuznetsov.recipes.api.RecipeController
 import ru.pkuznetsov.recipes.dao.{PostgresqlRecipeDao, RecipeTableManager}
 import ru.pkuznetsov.recipes.services.RecipeServiceImpl
@@ -36,20 +37,22 @@ object AppRunner extends IOApp {
 
     val recipeService = {
       val daoManager = new RecipeTableManager[IO]()
-      val dao = new PostgresqlRecipeDao[IO](transactor, daoManager)
-      new RecipeServiceImpl[IO](dao)
+      val recipeDao = new PostgresqlRecipeDao[IO](transactor, daoManager)
+      val ingredientNamesDao = new PostgresqlIngredientNamesDao[IO](transactor)
+      new RecipeServiceImpl[IO](recipeDao, ingredientNamesDao)
     }
 
     val bucketService = {
-      val dao = new PostgresqlBucketDao[IO](transactor)
-      new BucketService[IO](dao)
+      val bucketDao = new PostgresqlBucketDao[IO](transactor)
+      val ingredientNamesDao = new PostgresqlIngredientNamesDao[IO](transactor)
+      new BucketService[IO](bucketDao, ingredientNamesDao)
     }
 
     val httpApp = Router("/bucket" -> new BucketController[IO](bucketService).routes,
                          "/recipes" -> new RecipeController[IO](recipeService).routes).orNotFound
 
     BlazeServerBuilder[IO]
-      .bindHttp(8080, "localhost")
+      .bindHttp(8080, "0.0.0.0")
       .withHttpApp(httpApp)
       .serve
       .compile

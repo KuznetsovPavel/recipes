@@ -10,8 +10,8 @@ import cats.syntax.monadError._
 import cats.syntax.traverse._
 import com.typesafe.scalalogging.StrictLogging
 import io.circe.Json
+import ru.pkuznetsov.core.model.Errors.SpoonacularError
 import ru.pkuznetsov.recipes.loaders.SpoonacularLoader.{Backend, SpoonacularRecipeId}
-import ru.pkuznetsov.recipes.model.Errors.SpoonacularError
 import ru.pkuznetsov.recipes.model.Recipe
 import sttp.client._
 import sttp.client.asynchttpclient.cats.AsyncHttpClientCatsBackend
