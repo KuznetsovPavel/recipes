@@ -10,7 +10,7 @@ import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder, Json}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
-import ru.pkuznetsov.core.model.Errors
+import ru.pkuznetsov.core.model.AppError
 
 import scala.util.Try
 
@@ -32,12 +32,6 @@ object Recipe {
 
   implicit val decoder: Decoder[Recipe] = deriveDecoder[Recipe]
   implicit val encoder: Encoder[Recipe] = deriveEncoder[Recipe]
-
-  implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.emapTry { str =>
-    Try(URI.create(str))
-  }
-
-  implicit val uriEncoder: Encoder[URI] = (uri: URI) => Json.fromString(uri.toString)
 
   def fromSpoonacularResponse[F[_]](json: Json)(implicit monad: MonadError[F, Throwable]): F[Recipe] =
     monad
@@ -94,7 +88,7 @@ object Recipe {
         )
       }
       .handleErrorWith { err =>
-        monad.raiseError(Errors.CannotParseData(err))
+        monad.raiseError(AppError.CannotParseData(err))
       }
 }
 

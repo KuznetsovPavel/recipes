@@ -46,7 +46,7 @@ class PostgresqlRecipeQueriesTest extends FunSuite with Matchers with doobie.sca
   }
 
   test("select ingredient", Slow, DbTest) {
-    check(PostgresqlRecipeQueries.selectIngredient(10))
+    check(PostgresqlRecipeQueries.selectIngredients(10))
   }
 
 }

@@ -6,7 +6,7 @@ import cats.effect.IO
 import io.circe.Json
 import io.circe.parser._
 import org.scalatest.{FunSuite, Matchers}
-import ru.pkuznetsov.core.model.Errors
+import ru.pkuznetsov.core.model.AppError
 
 import scala.io.Source
 
@@ -63,7 +63,7 @@ class RecipeTest extends FunSuite with Matchers {
       recipe <- Recipe.fromSpoonacularResponse[IO](json)
     } yield recipe
 
-    an[Errors.CannotParseData] shouldBe thrownBy(result.unsafeRunSync())
+    an[AppError.CannotParseData] shouldBe thrownBy(result.unsafeRunSync())
   }
 
 }

@@ -23,7 +23,7 @@ object PostgresqlRecipeQueries {
          |VALUES (${ing.recipeId}, ${ing.ingredientId}, ${ing.amount}, ${ing.unit})
          |""".stripMargin.update
 
-  def selectIngredient(recipeId: Int) =
+  def selectIngredients(recipeId: Int) =
     sql"""
          |SELECT recipeId, ingredientId, amount, unit
          |FROM ingredients

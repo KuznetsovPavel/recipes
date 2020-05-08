@@ -6,7 +6,7 @@ import cats.instances.future._
 import io.circe.ParsingFailure
 import io.circe.parser.parse
 import org.scalatest.{AsyncFunSuite, Matchers}
-import ru.pkuznetsov.core.model.Errors.{CannotParseData, SpoonacularError}
+import ru.pkuznetsov.core.model.AppError.{CannotParseData, SpoonacularError}
 import ru.pkuznetsov.recipes.loaders.SpoonacularLoader._
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 import sttp.client.testing._
