@@ -11,6 +11,7 @@ import io.circe.{Decoder, Encoder, Json}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 import ru.pkuznetsov.core.model.AppError
+import ru.pkuznetsov.core.util.URIImplicits._
 
 import scala.util.Try
 

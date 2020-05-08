@@ -7,6 +7,7 @@ import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
+import ru.pkuznetsov.core.util.URIImplicits._
 
 final case class RecipeRequestBody(name: String,
                                    uri: Option[URI],
