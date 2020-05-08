@@ -26,7 +26,6 @@ libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-core"      % "0.8.8",
   "org.tpolecat" %% "doobie-hikari"    % "0.8.8",
   "org.tpolecat" %% "doobie-postgres"  % "0.8.8",
-  "org.tpolecat" %% "doobie-scalatest" % "0.8.8" % Test,
 
   "org.tpolecat" %% "doobie-scalatest" % "0.8.8" % Test,
   "org.scalatest" %% "scalatest" % "3.0.8" % Test,
