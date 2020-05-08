@@ -42,7 +42,7 @@ class RecipeController[F[_]: Applicative: Defer: Sync](service: RecipeService[F]
     checkErrorAndReturn(res, handleError)
   }
 
-  def handleError: PartialFunction[Throwable, String] = {
+  private def handleError: PartialFunction[Throwable, String] = {
     case e: RecipeError     => RecipeError.handleError(e)
     case e: IngredientError => IngredientError.handleError(e)
   }

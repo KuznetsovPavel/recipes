@@ -16,7 +16,16 @@ import ru.pkuznetsov.recipes.services.RecipeService.{IngredientId, RecipeId}
 
 import scala.util.Try
 
-class RecipeTableManager[F[_]](implicit monad: MonadError[F, Throwable]) {
+trait RecipeTableManager[F[_]] {
+  def createRecipeFrom(recipeRow: RecipeRow,
+                       ingredients: List[IngredientRow],
+                       names: List[IngredientName]): F[Recipe]
+  def recipe2RecipeRow(recipe: Recipe): RecipeRow
+  def recipeRequest2RecipeRow(recipe: RecipeRequestBody): RecipeRow
+  def ingRequest2IngRow(ingRequest: IngredientRequest, recipeId: RecipeId): IngredientRow
+}
+
+class RecipeTableManagerImpl[F[_]](implicit monad: MonadError[F, Throwable]) extends RecipeTableManager[F] {
 
   def createRecipeFrom(recipeRow: RecipeRow,
                        ingredients: List[IngredientRow],

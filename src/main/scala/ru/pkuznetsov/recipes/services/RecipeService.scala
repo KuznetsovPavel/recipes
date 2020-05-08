@@ -6,7 +6,7 @@ import cats.syntax.functor._
 import com.typesafe.scalalogging.StrictLogging
 import ru.pkuznetsov.ingredients.services.IngredientNameManager
 import ru.pkuznetsov.recipes.api.RecipeRequestBody
-import ru.pkuznetsov.recipes.dao.PostgresqlRecipeDao
+import ru.pkuznetsov.recipes.dao.RecipeDao
 import ru.pkuznetsov.recipes.model.Recipe
 import ru.pkuznetsov.recipes.model.RecipeError.RecipeNotExist
 import ru.pkuznetsov.recipes.services.RecipeService.{IngredientId, RecipeId}
@@ -18,7 +18,7 @@ trait RecipeService[F[_]] {
 }
 
 class RecipeServiceImpl[F[_]](
-    recipeDao: PostgresqlRecipeDao[F],
+    recipeDao: RecipeDao[F],
     ingredientNameManager: IngredientNameManager[F],
     recipeTableManager: RecipeTableManager[F])(implicit monad: MonadError[F, Throwable])
     extends RecipeService[F]

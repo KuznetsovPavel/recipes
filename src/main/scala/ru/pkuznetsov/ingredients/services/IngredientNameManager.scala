@@ -9,8 +9,16 @@ import ru.pkuznetsov.ingredients.model.IngredientError._
 import ru.pkuznetsov.ingredients.model.{IngredientError, IngredientName}
 import ru.pkuznetsov.recipes.services.RecipeService.IngredientId
 
-class IngredientNameManager[F[_]](dao: PostgresqlIngredientNamesDao[F])(
-    implicit monad: MonadError[F, Throwable]) {
+trait IngredientNameManager[F[_]] {
+  def getIngredientIdsFor(names: List[String]): F[List[IngredientName]]
+  def getIngredientNamesFor(ids: List[Int]): F[List[IngredientName]]
+  def checkIngredientNames(names: List[String]): F[Unit]
+  def checkIngredientIds(ids: List[IngredientId]): F[Unit]
+}
+
+class IngredientNameManagerImpl[F[_]](dao: PostgresqlIngredientNamesDao[F])(
+    implicit monad: MonadError[F, Throwable])
+    extends IngredientNameManager[F] {
 
   def getIngredientIdsFor(names: List[String]): F[List[IngredientName]] =
     for {

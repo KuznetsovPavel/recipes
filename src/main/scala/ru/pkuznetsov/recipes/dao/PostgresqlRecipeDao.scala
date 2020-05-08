@@ -10,10 +10,18 @@ import doobie.hikari.HikariTransactor
 import ru.pkuznetsov.core.dao.Dao
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 
+trait RecipeDao[F[_]] {
+  def saveRecipeWithIngredients(recipe: RecipeRow, ingredients: List[IngredientRow]): F[Int]
+  def getRecipe(recipeId: RecipeId): F[Option[RecipeRow]]
+  def getIngredientForRecipe(recipeId: RecipeId): F[List[IngredientRow]]
+  def saveIngredient(ingredient: IngredientRow, recipeId: Int): Free[connection.ConnectionOp, Int]
+}
+
 class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
     implicit bracket: Bracket[F, Throwable],
     monad: MonadError[F, Throwable]
-) extends Dao[F](transactor) {
+) extends Dao[F](transactor)
+    with RecipeDao[F] {
 
   def saveRecipeWithIngredients(recipe: RecipeRow, ingredients: List[IngredientRow]): F[Int] =
     for {

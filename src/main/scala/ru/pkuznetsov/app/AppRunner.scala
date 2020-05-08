@@ -11,10 +11,10 @@ import ru.pkuznetsov.bucket.api.BucketController
 import ru.pkuznetsov.bucket.dao.PostgresqlBucketDao
 import ru.pkuznetsov.bucket.services.BucketService
 import ru.pkuznetsov.ingredients.dao.PostgresqlIngredientNamesDao
-import ru.pkuznetsov.ingredients.services.IngredientNameManager
+import ru.pkuznetsov.ingredients.services.{IngredientNameManager, IngredientNameManagerImpl}
 import ru.pkuznetsov.recipes.api.RecipeController
 import ru.pkuznetsov.recipes.dao.PostgresqlRecipeDao
-import ru.pkuznetsov.recipes.services.{RecipeServiceImpl, RecipeTableManager}
+import ru.pkuznetsov.recipes.services.{RecipeServiceImpl, RecipeTableManager, RecipeTableManagerImpl}
 
 import scala.concurrent.ExecutionContext
 
@@ -39,8 +39,8 @@ object AppRunner extends IOApp {
     val recipeService = {
       val recipeDao = new PostgresqlRecipeDao[IO](transactor)
       val ingredientNamesDao = new PostgresqlIngredientNamesDao[IO](transactor)
-      val ingredientNameManager = new IngredientNameManager[IO](ingredientNamesDao)
-      val recipeTableManager = new RecipeTableManager[IO]
+      val ingredientNameManager = new IngredientNameManagerImpl[IO](ingredientNamesDao)
+      val recipeTableManager = new RecipeTableManagerImpl[IO]
       new RecipeServiceImpl[IO](recipeDao, ingredientNameManager, recipeTableManager)
     }
 
