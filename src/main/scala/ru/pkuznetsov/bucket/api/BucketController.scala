@@ -16,7 +16,7 @@ class BucketController[F[_]: Applicative: Defer: Sync](service: BucketService[F]
     case bucket @ POST -> Root => saveBucket(bucket)
   }
 
-  def saveBucket(request: Request[F]): F[Response[F]] =
+  private def saveBucket(request: Request[F]): F[Response[F]] =
     for {
       bucket <- request.as[Bucket]
       _ <- service.saveBucket(bucket)

@@ -26,7 +26,7 @@ class RecipeController[F[_]: Applicative: Defer: Sync](service: RecipeService[F]
     case GET -> Root / id      => getRecipeById(id)
   }
 
-  def getRecipeById(id: String): F[Response[F]] = {
+  private def getRecipeById(id: String): F[Response[F]] = {
     val res = for {
       recipeId <- monad.catchNonFatal(id.toInt).adaptError(_ => IncorrectRecipeId(id))
       recipe <- service.get(RecipeId(recipeId))
@@ -34,7 +34,7 @@ class RecipeController[F[_]: Applicative: Defer: Sync](service: RecipeService[F]
     checkErrorAndReturn(res, handleError)
   }
 
-  def saveRecipe(req: Request[F]): F[Response[F]] = {
+  private def saveRecipe(req: Request[F]): F[Response[F]] = {
     val res = for {
       recipe <- req.as[RecipeRequestBody]
       response <- service.save(recipe)
