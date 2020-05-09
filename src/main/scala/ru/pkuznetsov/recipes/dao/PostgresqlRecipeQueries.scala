@@ -1,5 +1,7 @@
 package ru.pkuznetsov.recipes.dao
 
+import cats.data.NonEmptyList
+import doobie.Fragments
 import doobie.implicits._
 
 object PostgresqlRecipeQueries {
@@ -30,4 +32,13 @@ object PostgresqlRecipeQueries {
          |WHERE recipeId = ${recipeId}
          |""".stripMargin.query[IngredientRow]
 
+  def selectRecipesByIngredients(ids: NonEmptyList[Int]) = {
+    val first = fr"""
+                    |SELECT recipeId FROM ingredients
+                    |EXCEPT
+                    |  SELECT recipeId FROM ingredients
+                    |  WHERE """.stripMargin
+    val second = Fragments.notIn(fr"ingredientId", ids)
+    (first ++ second).query[Int]
+  }
 }

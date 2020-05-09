@@ -41,7 +41,8 @@ object AppRunner extends IOApp {
       val ingredientNamesDao = new PostgresqlIngredientNamesDao[IO](transactor)
       val ingredientNameManager = new IngredientNameManagerImpl[IO](ingredientNamesDao)
       val recipeTableManager = new RecipeTableManagerImpl[IO]
-      new RecipeServiceImpl[IO](recipeDao, ingredientNameManager, recipeTableManager)
+      val bucketDao = new PostgresqlBucketDao[IO](transactor)
+      new RecipeServiceImpl[IO](recipeDao, bucketDao, ingredientNameManager, recipeTableManager)
     }
 
     val bucketService = {

@@ -2,13 +2,17 @@ package ru.pkuznetsov.recipes.services
 
 import java.net.URI
 
+import cats.data.NonEmptyList
 import cats.instances.future._
 import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.{AsyncFunSuite, Matchers}
+import ru.pkuznetsov.bucket.dao.BucketDao
+import ru.pkuznetsov.bucket.model.{Bucket, BucketEntry}
 import ru.pkuznetsov.ingredients.model.IngredientName
 import ru.pkuznetsov.ingredients.services.IngredientNameManager
 import ru.pkuznetsov.recipes.api.{IngredientRequest, RecipeRequestBody}
 import ru.pkuznetsov.recipes.dao.{IngredientRow, RecipeDao, RecipeRow}
+import ru.pkuznetsov.recipes.model.RecipeError.BucketNotExist
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 import ru.pkuznetsov.recipes.services.RecipeService.{IngredientId, RecipeId}
 
@@ -72,11 +76,13 @@ class RecipeServiceTest extends AsyncFunSuite with Matchers with AsyncMockFactor
   val recipeDao = mock[RecipeDao[Future]]
   val nameManager = mock[IngredientNameManager[Future]]
   val tableManager = mock[RecipeTableManager[Future]]
-  val service = new RecipeServiceImpl[Future](recipeDao, nameManager, tableManager)
+  val bucketDao = mock[BucketDao[Future]]
+  val service = new RecipeServiceImpl[Future](recipeDao, bucketDao, nameManager, tableManager)
 
   test("save recipe") {
     nameManager.checkIngredientIds _ expects * returns Future.unit
-    recipeDao.saveRecipeWithIngredients _ expects (recipeRow, ingredientsRow) returns Future.successful(7)
+    recipeDao.saveRecipeWithIngredients _ expects (recipeRow, ingredientsRow) returns Future.successful(
+      RecipeId(7))
     tableManager.recipeRequest2RecipeRow _ expects recipeRequest returns recipeRow
     recipeRequest.ingredients.zip(ingredientsRow).foreach {
       case (ingReq, ingRow) =>
@@ -98,6 +104,30 @@ class RecipeServiceTest extends AsyncFunSuite with Matchers with AsyncMockFactor
       Future.successful(recipe)
 
     service.get(RecipeId(42)).map(result => result shouldBe recipe)
+  }
+
+  test("get recipe by bucket") {
+    val ids = List(RecipeId(1), RecipeId(2), RecipeId(3))
+    val bucket = Bucket(
+      List(
+        BucketEntry(1, 1.2, Some("ml")),
+        BucketEntry(2, 2.2, None),
+        BucketEntry(3, 4.2, Some("ml"))
+      ))
+
+    (bucketDao.getBucket _).expects() returns Future.successful(Some(bucket))
+
+    recipeDao.getRecipesByIngredients _ expects NonEmptyList.of(IngredientId(1),
+                                                                IngredientId(2),
+                                                                IngredientId(3)) returns
+      Future.successful(List(RecipeId(1), RecipeId(2)))
+
+    service.getByBucket.map(result => result shouldBe List(RecipeId(1), RecipeId(2)))
+  }
+
+  test("get recipe without bucket") {
+    (bucketDao.getBucket _).expects() returns Future.successful(None)
+    recoverToSucceededIf[BucketNotExist.type](service.getByBucket)
   }
 
 }

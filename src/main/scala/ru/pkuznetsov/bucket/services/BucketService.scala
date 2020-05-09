@@ -27,7 +27,7 @@ class BucketServiceImpl[F[_]](bucketDao: BucketDao[F], ingredientNameManager: In
 
   def getBucket: F[Bucket] =
     for {
-      bucketOpt <- bucketDao.selectBucket
+      bucketOpt <- bucketDao.getBucket
       bucket <- monad.fromOption(bucketOpt, BucketNotExist)
     } yield bucket
 

@@ -1,24 +1,29 @@
 package ru.pkuznetsov.recipes.services
 
 import cats.MonadError
+import cats.data.{Nested, NonEmptyList}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import com.typesafe.scalalogging.StrictLogging
+import ru.pkuznetsov.bucket.dao.BucketDao
+import ru.pkuznetsov.bucket.model.Bucket
 import ru.pkuznetsov.ingredients.services.IngredientNameManager
 import ru.pkuznetsov.recipes.api.RecipeRequestBody
 import ru.pkuznetsov.recipes.dao.RecipeDao
 import ru.pkuznetsov.recipes.model.Recipe
-import ru.pkuznetsov.recipes.model.RecipeError.RecipeNotExist
+import ru.pkuznetsov.recipes.model.RecipeError.{BucketNotExist, EmptyBucket, RecipeNotExist}
 import ru.pkuznetsov.recipes.services.RecipeService.{IngredientId, RecipeId}
 import supertagged.TaggedType
 
 trait RecipeService[F[_]] {
   def save(recipe: RecipeRequestBody): F[RecipeId]
   def get(id: RecipeId): F[Recipe]
+  def getByBucket: F[List[RecipeId]]
 }
 
 class RecipeServiceImpl[F[_]](
     recipeDao: RecipeDao[F],
+    bucketDao: BucketDao[F],
     ingredientNameManager: IngredientNameManager[F],
     recipeTableManager: RecipeTableManager[F])(implicit monad: MonadError[F, Throwable])
     extends RecipeService[F]
@@ -34,7 +39,7 @@ class RecipeServiceImpl[F[_]](
       ingRows <- monad.pure(recipe.ingredients.map(recipeTableManager.ingRequest2IngRow(_, RecipeId(0))))
       recipeId <- recipeDao.saveRecipeWithIngredients(recipeRow, ingRows)
       _ <- monad.pure(logger.debug(s"recipe ${recipe} was saved with id ${recipeId}"))
-    } yield RecipeId(recipeId)
+    } yield recipeId
 
   def get(id: RecipeId): F[Recipe] =
     for {
@@ -48,6 +53,21 @@ class RecipeServiceImpl[F[_]](
       recipe <- recipeTableManager.createRecipeFrom(recipeRow, ingredientRows, ingredientNames)
       _ <- monad.pure(logger.debug(s"got recipe $id successfully"))
     } yield recipe
+
+  def getByBucket: F[List[RecipeId]] =
+    for {
+      _ <- monad.pure(logger.debug(s"getting recipes by bucket"))
+      bucketOpt <- bucketDao.getBucket
+      ingredients <- bucketOpt match {
+        case Some(Bucket(Nil)) => monad.raiseError[NonEmptyList[IngredientId]](EmptyBucket)
+        case None              => monad.raiseError[NonEmptyList[IngredientId]](BucketNotExist)
+        case Some(Bucket(x :: xs)) =>
+          monad.pure(NonEmptyList.of(x, xs: _*)).map(_.map(ing => IngredientId(ing.ingredientId)))
+      }
+      _ <- monad.pure(logger.debug(s"get ingredients ${ingredients.toList.mkString(", ")} from bucket"))
+      recipes <- recipeDao.getRecipesByIngredients(ingredients)
+      _ <- monad.pure(logger.debug(s"got recipes by bucket successfully"))
+    } yield recipes
 
 }
 

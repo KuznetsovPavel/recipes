@@ -10,6 +10,8 @@ object RecipeError {
   final case class CannotParseURI(uri: String, recipeId: RecipeId) extends RecipeError
   final case class RecipeNotExist(id: RecipeId) extends RecipeError
   final case class IncorrectRecipeId(id: String) extends RecipeError
+  object EmptyBucket extends RecipeError
+  object BucketNotExist extends RecipeError
 
   def handleError =
     (e: RecipeError) =>
@@ -18,5 +20,7 @@ object RecipeError {
         case RecipeError.CannotParseURI(_, _)     => "incorrect uri"
         case RecipeError.RecipeNotExist(id)       => s"recipe with id $id not exist"
         case RecipeError.IncorrectRecipeId(_)     => "id should be number"
+        case RecipeError.BucketNotExist           => "bucket not exist"
+        case RecipeError.EmptyBucket              => "empty bucket"
     }
 }

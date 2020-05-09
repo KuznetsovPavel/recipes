@@ -9,7 +9,7 @@ import ru.pkuznetsov.core.dao.Dao
 
 trait BucketDao[F[_]] {
   def addOrUpdateBucket(bucket: Bucket): F[Unit]
-  def selectBucket: F[Option[Bucket]]
+  def getBucket: F[Option[Bucket]]
 }
 
 class PostgresqlBucketDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
@@ -25,7 +25,7 @@ class PostgresqlBucketDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
         .map(_ => ())
     } yield res
 
-  def selectBucket: F[Option[Bucket]] =
+  def getBucket: F[Option[Bucket]] =
     PostgresqlBucketQueries.selectBucket.to[List].map {
       case Nil  => None
       case list => Some(Bucket(list))

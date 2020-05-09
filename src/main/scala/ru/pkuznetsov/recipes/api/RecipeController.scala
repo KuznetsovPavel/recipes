@@ -1,5 +1,6 @@
 package ru.pkuznetsov.recipes.api
 
+import cats.data.Nested
 import cats.effect.Sync
 import cats.syntax.flatMap._
 import cats.syntax.functor._
@@ -22,6 +23,7 @@ class RecipeController[F[_]: Applicative: Defer: Sync](service: RecipeService[F]
   override val routes: HttpRoutes[F] = HttpRoutes.of[F] {
     case recipe @ POST -> Root => saveRecipe(recipe)
     case GET -> Root / id      => getRecipeById(id)
+    case GET -> Root           => getRecipeByBucket
   }
 
   private def getRecipeById(id: String): F[Response[F]] = {
@@ -37,6 +39,14 @@ class RecipeController[F[_]: Applicative: Defer: Sync](service: RecipeService[F]
       recipe <- req.as[RecipeRequestBody]
       response <- service.save(recipe)
     } yield Json.obj(("id", Json.fromInt(response)))
+    checkErrorAndReturn(res)
+  }
+
+  private def getRecipeByBucket: F[Response[F]] = {
+    val res = for {
+      bucket <- service.getByBucket
+      _ = bucket.map(_.toInt)
+    } yield bucket.map(_.toInt).asJson
     checkErrorAndReturn(res)
   }
 }

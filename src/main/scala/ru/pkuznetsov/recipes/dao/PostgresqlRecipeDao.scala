@@ -1,6 +1,7 @@
 package ru.pkuznetsov.recipes.dao
 
 import cats.MonadError
+import cats.data.NonEmptyList
 import cats.effect.{Bracket, Resource}
 import cats.free.Free
 import cats.instances.list._
@@ -8,13 +9,13 @@ import cats.syntax.traverse._
 import doobie.free.connection
 import doobie.hikari.HikariTransactor
 import ru.pkuznetsov.core.dao.Dao
-import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
+import ru.pkuznetsov.recipes.services.RecipeService.{IngredientId, RecipeId}
 
 trait RecipeDao[F[_]] {
-  def saveRecipeWithIngredients(recipe: RecipeRow, ingredients: List[IngredientRow]): F[Int]
+  def saveRecipeWithIngredients(recipe: RecipeRow, ingredients: List[IngredientRow]): F[RecipeId]
   def getRecipe(recipeId: RecipeId): F[Option[RecipeRow]]
   def getIngredientForRecipe(recipeId: RecipeId): F[List[IngredientRow]]
-  def saveIngredient(ingredient: IngredientRow, recipeId: Int): Free[connection.ConnectionOp, Int]
+  def getRecipesByIngredients(ids: NonEmptyList[IngredientId]): F[List[RecipeId]]
 }
 
 class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
@@ -23,13 +24,13 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
 ) extends Dao[F](transactor)
     with RecipeDao[F] {
 
-  def saveRecipeWithIngredients(recipe: RecipeRow, ingredients: List[IngredientRow]): F[Int] =
+  def saveRecipeWithIngredients(recipe: RecipeRow, ingredients: List[IngredientRow]): F[RecipeId] =
     for {
       recipeId <- PostgresqlRecipeQueries
         .insertRecipe(recipe)
         .withUniqueGeneratedKeys[Int]("id")
       _ <- ingredients.traverse(saveIngredient(_, recipeId))
-    } yield recipeId
+    } yield RecipeId(recipeId)
 
   def getRecipe(recipeId: RecipeId): F[Option[RecipeRow]] =
     PostgresqlRecipeQueries.selectRecipe(recipeId).option
@@ -37,9 +38,14 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
   def getIngredientForRecipe(recipeId: RecipeId): F[List[IngredientRow]] =
     PostgresqlRecipeQueries.selectIngredients(recipeId).to[List]
 
-  def saveIngredient(ingredient: IngredientRow, recipeId: Int): Free[connection.ConnectionOp, Int] =
+  private def saveIngredient(ingredient: IngredientRow, recipeId: Int) =
     PostgresqlRecipeQueries
       .insertIngredient(IngredientRow(recipeId, ingredient.ingredientId, ingredient.amount, ingredient.unit))
       .run
 
+  def getRecipesByIngredients(ids: NonEmptyList[IngredientId]) =
+    PostgresqlRecipeQueries
+      .selectRecipesByIngredients(ids)
+      .to[List]
+      .map(_.map(id => RecipeId(id)))
 }

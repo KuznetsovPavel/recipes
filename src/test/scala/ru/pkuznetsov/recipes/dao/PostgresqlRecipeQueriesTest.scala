@@ -1,5 +1,6 @@
 package ru.pkuznetsov.recipes.dao
 
+import cats.data.NonEmptyList
 import org.scalatest.tagobjects.Slow
 import ru.pkuznetsov.core.dao.{DbTest, DbTestTag}
 
@@ -34,6 +35,10 @@ class PostgresqlRecipeQueriesTest extends DbTest {
 
   test("select ingredient", Slow, DbTestTag) {
     check(PostgresqlRecipeQueries.selectIngredients(10))
+  }
+
+  test("select recipe with ingredients", Slow, DbTestTag) {
+    check(PostgresqlRecipeQueries.selectRecipesByIngredients(NonEmptyList.of(1, 2, 3, 4)))
   }
 
 }

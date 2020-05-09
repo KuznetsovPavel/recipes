@@ -41,12 +41,12 @@ class BucketServiceTest extends AsyncFunSuite with Matchers with AsyncMockFactor
   }
 
   test("get bucket") {
-    (bucketDao.selectBucket _).expects() returns Future.successful(Some(bucket))
+    (bucketDao.getBucket _).expects() returns Future.successful(Some(bucket))
     bucketService.getBucket.map(_ shouldBe bucket)
   }
 
   test("get incorrect bucket") {
-    (bucketDao.selectBucket _).expects() returns Future.successful(None)
+    (bucketDao.getBucket _).expects() returns Future.successful(None)
     recoverToSucceededIf[BucketNotExist.type](bucketService.getBucket)
   }
 
