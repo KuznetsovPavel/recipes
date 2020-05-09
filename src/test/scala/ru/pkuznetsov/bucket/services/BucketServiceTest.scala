@@ -4,6 +4,7 @@ import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.{AsyncFunSuite, Matchers}
 import ru.pkuznetsov.bucket.dao.BucketDao
 import cats.instances.future._
+import ru.pkuznetsov.bucket.model.BucketError.BucketNotExist
 import ru.pkuznetsov.bucket.model.{Bucket, BucketEntry}
 import ru.pkuznetsov.ingredients.model.IngredientError.IngredientIdsDuplicates
 import ru.pkuznetsov.ingredients.services.IngredientNameManager
@@ -37,6 +38,16 @@ class BucketServiceTest extends AsyncFunSuite with Matchers with AsyncMockFactor
     ingNameManager.checkIngredientIds _ expects (ingIds ++ ingIds) returns Future.failed(
       IngredientIdsDuplicates(List(1, 2, 3)))
     recoverToSucceededIf[IngredientIdsDuplicates](bucketService.saveBucket(incorrectBucket))
+  }
+
+  test("get bucket") {
+    (bucketDao.selectBucket _).expects() returns Future.successful(Some(bucket))
+    bucketService.getBucket.map(_ shouldBe bucket)
+  }
+
+  test("get incorrect bucket") {
+    (bucketDao.selectBucket _).expects() returns Future.successful(None)
+    recoverToSucceededIf[BucketNotExist.type](bucketService.getBucket)
   }
 
 }

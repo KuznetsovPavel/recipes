@@ -1,14 +1,15 @@
 package ru.pkuznetsov.bucket.dao
 
 import cats.effect.{Bracket, Resource}
+import cats.instances.list._
+import cats.syntax.traverse._
 import doobie.hikari.HikariTransactor
 import ru.pkuznetsov.bucket.model.Bucket
-import cats.syntax.traverse._
-import cats.instances.list._
 import ru.pkuznetsov.core.dao.Dao
 
 trait BucketDao[F[_]] {
   def addOrUpdateBucket(bucket: Bucket): F[Unit]
+  def selectBucket: F[Option[Bucket]]
 }
 
 class PostgresqlBucketDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
@@ -16,7 +17,7 @@ class PostgresqlBucketDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
     extends Dao[F](transactor)
     with BucketDao[F] {
 
-  def addOrUpdateBucket(bucket: Bucket): F[Unit] =
+  override def addOrUpdateBucket(bucket: Bucket): F[Unit] =
     for {
       _ <- PostgresqlBucketQueries.deleteBucketTable.run
       res <- bucket.ingredients
@@ -24,4 +25,9 @@ class PostgresqlBucketDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
         .map(_ => ())
     } yield res
 
+  def selectBucket: F[Option[Bucket]] =
+    PostgresqlBucketQueries.selectBucket.to[List].map {
+      case Nil  => None
+      case list => Some(Bucket(list))
+    }
 }

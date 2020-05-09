@@ -15,6 +15,7 @@ class BucketController[F[_]: Applicative: Defer: Sync](service: BucketService[F]
 
   override val routes: HttpRoutes[F] = HttpRoutes.of[F] {
     case bucket @ POST -> Root => saveBucket(bucket)
+    case GET -> Root           => getBucket
   }
 
   private def saveBucket(request: Request[F]): F[Response[F]] = {
@@ -25,4 +26,6 @@ class BucketController[F[_]: Applicative: Defer: Sync](service: BucketService[F]
     checkErrorAndReturn(res)
   }
 
+  private def getBucket: F[Response[F]] =
+    checkErrorAndReturn(service.getBucket.map(_.asJson))
 }

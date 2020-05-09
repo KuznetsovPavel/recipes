@@ -14,4 +14,8 @@ class PostgresqlBucketQueriesTest extends DbTest {
     check(PostgresqlBucketQueries.insertBucketEntry(BucketEntry(0, 23.67, Some("uunit"))))
   }
 
+  test("select bucket", Slow, DbTestTag) {
+    check(PostgresqlBucketQueries.selectBucket)
+  }
+
 }
