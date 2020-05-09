@@ -10,8 +10,6 @@ import io.circe.Json
 import io.circe.syntax._
 import org.http4s.{HttpRoutes, Request, Response}
 import ru.pkuznetsov.core.api.Http4sController
-import ru.pkuznetsov.ingredients.model.IngredientError
-import ru.pkuznetsov.recipes.model.RecipeError
 import ru.pkuznetsov.recipes.model.RecipeError.IncorrectRecipeId
 import ru.pkuznetsov.recipes.services.RecipeService
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
@@ -31,7 +29,7 @@ class RecipeController[F[_]: Applicative: Defer: Sync](service: RecipeService[F]
       recipeId <- monad.catchNonFatal(id.toInt).adaptError(_ => IncorrectRecipeId(id))
       recipe <- service.get(RecipeId(recipeId))
     } yield recipe.asJson
-    checkErrorAndReturn(res, handleError)
+    checkErrorAndReturn(res)
   }
 
   private def saveRecipe(req: Request[F]): F[Response[F]] = {
@@ -39,11 +37,6 @@ class RecipeController[F[_]: Applicative: Defer: Sync](service: RecipeService[F]
       recipe <- req.as[RecipeRequestBody]
       response <- service.save(recipe)
     } yield Json.obj(("id", Json.fromInt(response)))
-    checkErrorAndReturn(res, handleError)
-  }
-
-  private def handleError: PartialFunction[Throwable, String] = {
-    case e: RecipeError     => RecipeError.handleError(e)
-    case e: IngredientError => IngredientError.handleError(e)
+    checkErrorAndReturn(res)
   }
 }

@@ -8,6 +8,7 @@ import io.circe.Json
 import org.http4s.HttpRoutes
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
+import ru.pkuznetsov.core.model.AppError
 
 trait Controller[F[_]] {
   val routes: HttpRoutes[F]
@@ -17,11 +18,11 @@ abstract class Http4sController[F[_]: Applicative: Defer](implicit monad: MonadE
     extends Controller[F]
     with Http4sDsl[F] {
 
-  def checkErrorAndReturn(data: F[Json], checkError: PartialFunction[Throwable, String]) =
+  def checkErrorAndReturn(data: F[Json]) =
     data
-      .recover(checkError andThen errorToJson _)
+      .recover(AppError.handleError andThen errorToJson _)
       .map(json => json.deepDropNullValues)
       .flatMap(res => Ok(res))
 
-  def errorToJson(str: String): Json = Json.obj(("error", Json.fromString(str)))
+  private def errorToJson(str: String): Json = Json.obj(("error", Json.fromString(str)))
 }
