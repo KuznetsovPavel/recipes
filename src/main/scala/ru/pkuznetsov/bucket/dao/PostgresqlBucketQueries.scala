@@ -8,7 +8,12 @@ object PostgresqlBucketQueries {
   def insertBucketEntry(entry: BucketEntry) =
     sql"""
          |INSERT INTO buckets (ingredientId, amount, unit)
-         |VALUES (${entry.id}, ${entry.amount}, ${entry.unit})
+         |VALUES (${entry.ingredientId}, ${entry.amount}, ${entry.unit})
+         |""".stripMargin.update
+
+  def deleteBucketTable =
+    sql"""
+         |DELETE FROM buckets
          |""".stripMargin.update
 
 }

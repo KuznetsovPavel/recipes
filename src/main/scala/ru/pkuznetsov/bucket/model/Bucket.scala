@@ -8,7 +8,7 @@ import org.http4s.circe.jsonOf
 
 final case class Bucket(ingredients: List[BucketEntry])
 
-final case class BucketEntry(id: Int, amount: Double, unit: Option[String])
+final case class BucketEntry(ingredientId: Int, amount: Double, unit: Option[String])
 
 object Bucket {
   implicit val decoder: Decoder[Bucket] = deriveDecoder[Bucket]
