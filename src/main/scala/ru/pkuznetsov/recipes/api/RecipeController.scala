@@ -30,7 +30,7 @@ class RecipeController[F[_]: Applicative: Defer: Sync](service: RecipeService[F]
     val res = for {
       recipeId <- monad.catchNonFatal(id.toInt).adaptError(_ => IncorrectRecipeId(id))
       recipe <- service.get(RecipeId(recipeId))
-    } yield recipe.asJson.printWith(printer)
+    } yield recipe.asJson
     checkErrorAndReturn(res, handleError)
   }
 
@@ -38,7 +38,7 @@ class RecipeController[F[_]: Applicative: Defer: Sync](service: RecipeService[F]
     val res = for {
       recipe <- req.as[RecipeRequestBody]
       response <- service.save(recipe)
-    } yield Json.obj(("id", Json.fromInt(response))).printWith(printer)
+    } yield Json.obj(("id", Json.fromInt(response)))
     checkErrorAndReturn(res, handleError)
   }
 
