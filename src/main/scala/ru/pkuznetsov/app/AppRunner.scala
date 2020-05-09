@@ -9,7 +9,7 @@ import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 import ru.pkuznetsov.bucket.api.BucketController
 import ru.pkuznetsov.bucket.dao.PostgresqlBucketDao
-import ru.pkuznetsov.bucket.services.BucketService
+import ru.pkuznetsov.bucket.services.{BucketService, BucketServiceImpl}
 import ru.pkuznetsov.ingredients.dao.PostgresqlIngredientNamesDao
 import ru.pkuznetsov.ingredients.services.{IngredientNameManager, IngredientNameManagerImpl}
 import ru.pkuznetsov.recipes.api.RecipeController
@@ -46,8 +46,9 @@ object AppRunner extends IOApp {
 
     val bucketService = {
       val bucketDao = new PostgresqlBucketDao[IO](transactor)
-      val ingredientNamesDao = new PostgresqlIngredientNamesDao[IO](transactor)
-      new BucketService[IO](bucketDao, ingredientNamesDao)
+      val ingredientNameDao = new PostgresqlIngredientNamesDao[IO](transactor)
+      val ingredientNameManager = new IngredientNameManagerImpl[IO](ingredientNameDao)
+      new BucketServiceImpl[IO](bucketDao, ingredientNameManager)
     }
 
     val httpApp = Router("/bucket" -> new BucketController[IO](bucketService).routes,
