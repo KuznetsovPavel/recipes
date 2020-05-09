@@ -8,7 +8,7 @@ import ru.pkuznetsov.ingredients.model.IngredientName
 import ru.pkuznetsov.recipes.dao.{IngredientRow, RecipeRow}
 import ru.pkuznetsov.recipes.model.RecipeError.{CannotFindIngredient, CannotParseURI}
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
-import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
+import ru.pkuznetsov.recipes.services.RecipeService.IngredientId
 
 import scala.concurrent.Future
 
@@ -34,7 +34,9 @@ class RecipeTableManagerTest extends AsyncFunSuite with Matchers {
                          IngredientRow(0, 2, 10, None),
                          IngredientRow(0, 3, 0.1, Some("kg")))
 
-  val names = List(IngredientName(1, "name1"), IngredientName(2, "name2"), IngredientName(3, "name3"))
+  val names = List(IngredientName(IngredientId(1), "name1"),
+                   IngredientName(IngredientId(2), "name2"),
+                   IngredientName(IngredientId(3), "name3"))
 
   val recipe = Recipe(
     id = 0,

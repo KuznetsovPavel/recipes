@@ -42,7 +42,8 @@ class RecipeServiceImpl[F[_]](
       recipeRowOpt <- recipeDao.getRecipe(id)
       recipeRow <- monad.fromOption(recipeRowOpt, RecipeNotExist(id))
       ingredientRows <- recipeDao.getIngredientForRecipe(id)
-      ingredientNames <- ingredientNameManager.getIngredientNamesFor(ingredientRows.map(_.ingredientId))
+      ingredientNames <- ingredientNameManager.getIngredientNamesFor(
+        ingredientRows.map(ing => IngredientId(ing.ingredientId)))
       _ <- monad.pure(logger.debug(s"got all data for recipe $id"))
       recipe <- recipeTableManager.createRecipeFrom(recipeRow, ingredientRows, ingredientNames)
       _ <- monad.pure(logger.debug(s"got recipe $id successfully"))

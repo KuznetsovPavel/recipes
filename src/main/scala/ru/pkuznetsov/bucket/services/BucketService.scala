@@ -3,11 +3,10 @@ package ru.pkuznetsov.bucket.services
 import cats.MonadError
 import ru.pkuznetsov.bucket.dao.PostgresqlBucketDao
 import ru.pkuznetsov.bucket.model.Bucket
-import ru.pkuznetsov.ingredients.dao.PostgresqlIngredientNamesDao
+import ru.pkuznetsov.ingredients.dao.IngredientNamesDao
 
-class BucketService[F[_]](
-    bucketDao: PostgresqlBucketDao[F],
-    ingredientNameDao: PostgresqlIngredientNamesDao[F])(implicit monad: MonadError[F, Throwable]) {
+class BucketService[F[_]](bucketDao: PostgresqlBucketDao[F], ingredientNameDao: IngredientNamesDao[F])(
+    implicit monad: MonadError[F, Throwable]) {
 
   def saveBucket(bucket: Bucket): F[Unit] = ???
 //    for {

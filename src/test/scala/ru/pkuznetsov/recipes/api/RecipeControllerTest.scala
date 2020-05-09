@@ -9,7 +9,7 @@ import io.circe.{Json, Printer}
 import org.http4s.circe.jsonOf
 import org.http4s.implicits._
 import org.http4s.{EntityDecoder, Method, Request, Status}
-import org.scalamock.scalatest.MockFactory
+import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.{FunSuite, Matchers}
 import ru.pkuznetsov.ingredients.model.IngredientError.EmptyIngredientList
 import ru.pkuznetsov.recipes.model.RecipeError.RecipeNotExist
@@ -17,7 +17,7 @@ import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 import ru.pkuznetsov.recipes.services.RecipeService
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 
-class RecipeControllerTest extends FunSuite with Matchers with MockFactory {
+class RecipeControllerTest extends FunSuite with Matchers with AsyncMockFactory {
 
   implicit val jsonDecoder = jsonOf[IO, Json]
 

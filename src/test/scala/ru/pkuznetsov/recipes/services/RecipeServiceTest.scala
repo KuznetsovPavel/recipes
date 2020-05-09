@@ -3,18 +3,18 @@ package ru.pkuznetsov.recipes.services
 import java.net.URI
 
 import cats.instances.future._
-import org.scalamock.scalatest.MockFactory
+import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.{AsyncFunSuite, Matchers}
 import ru.pkuznetsov.ingredients.model.IngredientName
 import ru.pkuznetsov.ingredients.services.IngredientNameManager
 import ru.pkuznetsov.recipes.api.{IngredientRequest, RecipeRequestBody}
 import ru.pkuznetsov.recipes.dao.{IngredientRow, RecipeDao, RecipeRow}
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
-import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
+import ru.pkuznetsov.recipes.services.RecipeService.{IngredientId, RecipeId}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class RecipeServiceTest extends AsyncFunSuite with Matchers with MockFactory {
+class RecipeServiceTest extends AsyncFunSuite with Matchers with AsyncMockFactory {
 
   implicit val ex = ExecutionContext.global
 
@@ -78,15 +78,22 @@ class RecipeServiceTest extends AsyncFunSuite with Matchers with MockFactory {
     nameManager.checkIngredientIds _ expects * returns Future.unit
     recipeDao.saveRecipeWithIngredients _ expects (recipeRow, ingredientsRow) returns Future.successful(7)
     tableManager.recipeRequest2RecipeRow _ expects recipeRequest returns recipeRow
+    recipeRequest.ingredients.zip(ingredientsRow).foreach {
+      case (ingReq, ingRow) =>
+        tableManager.ingRequest2IngRow _ expects (ingReq, RecipeId(0)) returns ingRow
+    }
 
     service.save(recipeRequest).map(result => result shouldBe RecipeId(7))
   }
 
   test("get recipe") {
-    val names = List(IngredientName(1, "name1"), IngredientName(2, "name2"), IngredientName(3, "name3"))
+    val names = List(IngredientName(IngredientId(1), "name1"),
+                     IngredientName(IngredientId(2), "name2"),
+                     IngredientName(IngredientId(3), "name3"))
     recipeDao.getRecipe _ expects RecipeId(42) returns Future.successful(Some(recipeRow))
     recipeDao.getIngredientForRecipe _ expects RecipeId(42) returns Future.successful(ingredientsRow)
-    nameManager.getIngredientNamesFor _ expects List(1, 2, 3) returns Future.successful(names)
+    nameManager.getIngredientNamesFor _ expects List(1, 2, 3).map(x => IngredientId(x)) returns Future
+      .successful(names)
     tableManager.createRecipeFrom _ expects (recipeRow, ingredientsRow, names) returns
       Future.successful(recipe)
 

@@ -4,20 +4,19 @@ import cats.MonadError
 import cats.data.NonEmptyList
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import ru.pkuznetsov.ingredients.dao.PostgresqlIngredientNamesDao
+import ru.pkuznetsov.ingredients.dao.IngredientNamesDao
 import ru.pkuznetsov.ingredients.model.IngredientError._
 import ru.pkuznetsov.ingredients.model.{IngredientError, IngredientName}
 import ru.pkuznetsov.recipes.services.RecipeService.IngredientId
 
 trait IngredientNameManager[F[_]] {
   def getIngredientIdsFor(names: List[String]): F[List[IngredientName]]
-  def getIngredientNamesFor(ids: List[Int]): F[List[IngredientName]]
+  def getIngredientNamesFor(ids: List[IngredientId]): F[List[IngredientName]]
   def checkIngredientNames(names: List[String]): F[Unit]
   def checkIngredientIds(ids: List[IngredientId]): F[Unit]
 }
 
-class IngredientNameManagerImpl[F[_]](dao: PostgresqlIngredientNamesDao[F])(
-    implicit monad: MonadError[F, Throwable])
+class IngredientNameManagerImpl[F[_]](dao: IngredientNamesDao[F])(implicit monad: MonadError[F, Throwable])
     extends IngredientNameManager[F] {
 
   def getIngredientIdsFor(names: List[String]): F[List[IngredientName]] =
@@ -28,7 +27,7 @@ class IngredientNameManagerImpl[F[_]](dao: PostgresqlIngredientNamesDao[F])(
       _ <- errorIfEmpty(getDiff(names, ingNames.map(_.name)), CannotFindIngredientNames)
     } yield ingNames
 
-  def getIngredientNamesFor(ids: List[Int]): F[List[IngredientName]] =
+  def getIngredientNamesFor(ids: List[IngredientId]): F[List[IngredientName]] =
     for {
       nonEmptyIngredients <- monad.fromOption(NonEmptyList.fromList(ids), EmptyIngredientList)
       _ <- errorIfEmpty(getDuplicates(ids), IngredientIdsDuplicates)

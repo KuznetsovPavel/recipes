@@ -1,3 +1,5 @@
 package ru.pkuznetsov.ingredients.model
 
-case class IngredientName(id: Int, name: String)
+import ru.pkuznetsov.recipes.services.RecipeService.IngredientId
+
+case class IngredientName(id: IngredientId, name: String)
