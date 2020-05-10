@@ -39,26 +39,31 @@ object PostgresqlRecipeQueries {
          |);
          |""".stripMargin.update
 
-  def insertRecipe(name: String,
-                   uri: Option[String],
-                   summary: String,
-                   author: String,
-                   cookingTime: Option[Int],
-                   calories: Option[Double],
-                   protein: Option[Double],
-                   fat: Option[Double],
-                   carbohydrates: Option[Double],
-                   sugar: Option[Double]) =
+  def insertRecipe(recipeRow: RecipeRow) =
     sql"""
          |INSERT INTO recipes (name, uri, summary, author, cookingTime, calories, protein, fat, carbohydrates, sugar)
-         |VALUES ($name, $uri, $summary, $author, $cookingTime, $calories, $protein, $fat, $carbohydrates, $sugar)
+         |VALUES (${recipeRow.name}, ${recipeRow.uri}, ${recipeRow.summary}, ${recipeRow.author}, ${recipeRow.cookingTime}, ${recipeRow.calories}, ${recipeRow.protein}, ${recipeRow.fat}, ${recipeRow.carbohydrates}, ${recipeRow.sugar})
          |""".stripMargin.update
 
-  def insertIngredient(recipeId: Int, ingredientId: Int, amount: Double, `unit`: Option[String]) =
+  def selectRecipe(id: Int) =
+    sql"""
+         |SELECT id, name, uri, summary, author, cookingTime, calories, protein, fat, carbohydrates, sugar
+         |FROM recipes
+         |WHERE id = ${id}
+         |""".stripMargin.query[RecipeRow]
+
+  def insertIngredient(ing: IngredientRow) =
     sql"""
          |INSERT INTO ingredients (recipeId, ingredientId, amount, unit)
-         |VALUES ($recipeId, $ingredientId, $amount, $unit)
+         |VALUES (${ing.recipeId}, ${ing.ingredientId}, ${ing.amount}, ${ing.unit})
          |""".stripMargin.update
+
+  def selectIngredient(recipeId: Int) =
+    sql"""
+         |SELECT recipeId, ingredientId, amount, unit
+         |FROM ingredients
+         |WHERE recipeId = ${recipeId}
+         |""".stripMargin.query[IngredientRow]
 
   def insertIngredientName(name: String) =
     sql"""
@@ -71,6 +76,13 @@ object PostgresqlRecipeQueries {
          |SELECT id FROM ingredient_names
          |WHERE  ingredient = ${name}
          |""".stripMargin.query[Int]
+  }
+
+  def selectIngredientName(id: Int) = {
+    sql"""
+         |SELECT id, ingredient FROM ingredient_names
+         |WHERE  id = ${id}
+         |""".stripMargin.query[(Int, String)]
   }
 
 }

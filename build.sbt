@@ -17,6 +17,12 @@ libraryDependencies ++= Seq(
 
   "org.rudogma" %% "supertagged" % "2.0-RC1",
 
+  "org.http4s" %% "http4s-dsl" % "0.21.3",
+  "org.http4s" %% "http4s-blaze-server" % "0.21.3",
+  "org.http4s" %% "http4s-blaze-client" % "0.21.3",
+
+  "org.http4s" %% "http4s-circe" % "0.21.3",
+
   "org.tpolecat" %% "doobie-core"      % "0.8.8",
   "org.tpolecat" %% "doobie-hikari"    % "0.8.8",
   "org.tpolecat" %% "doobie-postgres"  % "0.8.8",
