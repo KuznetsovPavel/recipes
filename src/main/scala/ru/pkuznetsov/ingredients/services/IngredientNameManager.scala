@@ -15,6 +15,7 @@ import ru.pkuznetsov.recipes.services.RecipeService.IngredientId
 trait IngredientNameManager[F[_]] {
   def getIngredientIdsFor(names: List[String]): F[List[IngredientName]]
   def getIngredientNamesFor(ids: List[IngredientId]): F[List[IngredientName]]
+  def addAndGetNames(names: List[String]): F[List[IngredientName]]
   def checkIngredientNames(names: List[String]): F[Unit]
   def checkIngredientIds(ids: List[IngredientId]): F[Unit]
 }

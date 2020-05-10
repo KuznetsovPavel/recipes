@@ -1,4 +1,4 @@
-package ru.pkuznetsov.loaders.spoonacular
+package ru.pkuznetsov.loaders.connectors.spoonacular
 
 import java.net.URI
 
@@ -6,7 +6,7 @@ import cats.MonadError
 import io.circe.Json
 import cats.syntax.applicativeError._
 import cats.instances.option._
-import ru.pkuznetsov.core.model.AppError
+import ru.pkuznetsov.loaders.model.LoaderError
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 
 import scala.util.Try
@@ -67,8 +67,8 @@ object SpoonacularDeserializator {
           ingredients = parseIngredients
         )
       }
-      .handleErrorWith { err =>
-        monad.raiseError(AppError.CannotParseData(err))
+      .handleErrorWith { _ =>
+        monad.raiseError(LoaderError.CannotParseJson(json))
       }
 
 }
