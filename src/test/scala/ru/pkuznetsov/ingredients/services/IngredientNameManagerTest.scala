@@ -5,13 +5,7 @@ import cats.instances.future._
 import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.{AsyncFunSuite, Matchers}
 import ru.pkuznetsov.ingredients.dao.IngredientNamesDao
-import ru.pkuznetsov.ingredients.model.IngredientError.{
-  CannotFindIngredientIds,
-  CannotFindIngredientNames,
-  EmptyIngredientList,
-  IngredientIdsDuplicates,
-  IngredientNameDuplicates
-}
+import ru.pkuznetsov.ingredients.model.IngredientError._
 import ru.pkuznetsov.ingredients.model.IngredientName
 import ru.pkuznetsov.recipes.services.RecipeService.IngredientId
 
@@ -63,6 +57,17 @@ class IngredientNameManagerTest extends AsyncFunSuite with Matchers with AsyncMo
 
   test("get ingredient ids for empty list") {
     recoverToSucceededIf[EmptyIngredientList.type](manager.getIngredientIdsFor(List.empty))
+  }
+
+  test("get ingredient names if all exist") {
+    dao.getByNames _ expects NonEmptyList.fromListUnsafe(names) returns Future.successful(ingNames)
+    manager.addAndGetNames(names).map(_ shouldBe ingNames)
+  }
+
+  test("get ingredient names if not all exist") {
+    dao.getByNames _ expects NonEmptyList.fromListUnsafe(names) returns Future.successful(ingNames.drop(1))
+    dao.insertIngName _ expects "name1" returns Future.successful(1)
+    manager.addAndGetNames(names).map(_.sortBy(_.name)).map(_ shouldBe ingNames)
   }
 
 }

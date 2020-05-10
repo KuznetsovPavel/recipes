@@ -12,6 +12,7 @@ import scala.language.implicitConversions
 trait IngredientNamesDao[F[_]] {
   def getByNames(names: NonEmptyList[String]): F[List[IngredientName]]
   def getByIds(names: NonEmptyList[Int]): F[List[IngredientName]]
+  def insertIngName(name: String): F[Int]
 }
 
 class PostgresqlIngredientNamesDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(

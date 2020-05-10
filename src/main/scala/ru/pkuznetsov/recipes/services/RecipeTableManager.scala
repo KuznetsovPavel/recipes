@@ -21,6 +21,7 @@ trait RecipeTableManager[F[_]] {
                        ingredients: List[IngredientRow],
                        names: List[IngredientName]): F[Recipe]
   def recipe2RecipeRow(recipe: Recipe): RecipeRow
+  def ing2IngRow(ing: Ingredient): IngredientRow
   def recipeRequest2RecipeRow(recipe: RecipeRequestBody): RecipeRow
   def ingRequest2IngRow(ingRequest: IngredientRequest, recipeId: RecipeId): IngredientRow
 }
@@ -100,4 +101,6 @@ class RecipeTableManagerImpl[F[_]](implicit monad: MonadError[F, Throwable]) ext
   def ingRequest2IngRow(ingRequest: IngredientRequest, recipeId: RecipeId): IngredientRow =
     IngredientRow(recipeId, ingRequest.id, ingRequest.amount, ingRequest.unit)
 
+  def ing2IngRow(ing: Ingredient): IngredientRow =
+    IngredientRow(0, ing.id, ing.amount, ing.unit)
 }
