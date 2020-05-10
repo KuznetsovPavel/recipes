@@ -1,22 +1,20 @@
-package ru.pkuznetsov.recipes.loaders
+package ru.pkuznetsov.loaders.spoonacular
 
 import java.net.URI
 
 import cats.instances.future._
-import io.circe.ParsingFailure
+import io.circe.Json
 import io.circe.parser.parse
 import org.scalatest.{AsyncFunSuite, Matchers}
-import ru.pkuznetsov.core.model.AppError.{CannotParseData, SpoonacularError}
-import ru.pkuznetsov.recipes.loaders.SpoonacularLoader._
+import ru.pkuznetsov.core.model.AppError
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
-import sttp.client.testing._
 
 import scala.concurrent.Future
 import scala.io.Source
 
-class SpoonacularLoaderTest extends AsyncFunSuite with Matchers {
+class SpoonacularDeserializatorTest extends AsyncFunSuite with Matchers {
 
-  test("load by id") {
+  test("parse correct spoonacular data") {
     val recipe = Recipe(
       id = 0,
       name = "Marinated Boquerones",
@@ -44,46 +42,29 @@ class SpoonacularLoaderTest extends AsyncFunSuite with Matchers {
       )
     )
 
-    val data = parse(Source.fromResource("SpoonacularResponse.json").mkString)
+    val result = for {
+      str <- Future(Source.fromResource("SpoonacularResponse.json").mkString)
+      json <- Future(parse(str).getOrElse(Json.fromString("")))
+      recipe <- SpoonacularDeserializator.fromResponse[Future](json)
+    } yield recipe
 
-    val backend = SttpBackendStub.asynchronousFuture
-      .whenRequestMatches(
-        _.uri.toJavaUri == new URI("https://api.spoonacular.com/recipes/10/information?apiKey=someApi"))
-      .thenRespond(data)
-
-    val loader = new SpoonacularLoader[Future](backend, "someApi")
-
-    loader.getRecipe(SpoonacularRecipeId(10L)).map { result =>
-      result shouldBe recipe
-    }
+    result.map(_ shouldBe recipe)
   }
 
-  test("incorrect data were loaded") {
-    val data = parse(
-      Source
-        .fromResource("SpoonacularResponse.json")
-        .mkString
-        .replace(
+  test("parse incorrect spoonacular data") {
+    val result = for {
+      str <- Future(Source.fromResource("SpoonacularResponse.json").mkString)
+      incorrect <- Future(
+        str.replace(
           """"amount": 6,
-        |          "unitShort": "servings",
-        |          "unitLong": "servings"""".stripMargin,
+            |          "unitShort": "servings",
+            |          "unitLong": "servings"""".stripMargin,
           """"ahahaha":"hahaha""""
         ))
-
-    val backend = SttpBackendStub.asynchronousFuture.whenAnyRequest
-      .thenRespond(data)
-
-    val loader = new SpoonacularLoader[Future](backend, "someApi")
-
-    recoverToSucceededIf[CannotParseData](loader.getRecipe(SpoonacularRecipeId(10L)))
-  }
-
-  test("backend return error") {
-    val backend = SttpBackendStub.asynchronousFuture.whenAnyRequest
-      .thenRespond(Left(ParsingFailure("incorrect data", new IllegalArgumentException(""))))
-
-    val loader = new SpoonacularLoader[Future](backend, "someApi")
-    recoverToSucceededIf[SpoonacularError](loader.getRecipe(SpoonacularRecipeId(10L)))
+      json <- Future(parse(incorrect).getOrElse(Json.fromString("")))
+      recipe <- SpoonacularDeserializator.fromResponse[Future](json)
+    } yield recipe
+    recoverToSucceededIf[AppError.CannotParseData](result)
   }
 
 }
