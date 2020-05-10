@@ -27,6 +27,12 @@ libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-hikari"    % "0.8.8",
   "org.tpolecat" %% "doobie-postgres"  % "0.8.8",
 
+  "com.typesafe" % "config" % "1.4.0",
+  "com.softwaremill.macwire" %% "macros" % "2.3.4" % "provided",
+  "com.softwaremill.macwire" %% "macrosakka" % "2.3.4" % "provided",
+  "com.softwaremill.macwire" %% "util" % "2.3.4",
+  "com.softwaremill.macwire" %% "proxy" % "2.3.4",
+
   "org.tpolecat" %% "doobie-scalatest" % "0.8.8" % Test,
   "org.scalatest" %% "scalatest" % "3.0.8" % Test,
   "org.scalamock" %% "scalamock" % "4.4.0" % Test
