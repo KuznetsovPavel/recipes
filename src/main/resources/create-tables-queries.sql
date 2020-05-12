@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS ingredients
     recipeId     SERIAL REFERENCES recipes (id),
     ingredientId SERIAL REFERENCES ingredient_names (id),
     amount       FLOAT NOT NULL,
-    unit         VARCHAR
+    unit         VARCHAR,
+    PRIMARY KEY(recipeId, ingredientId)
 );
 
 CREATE TABLE IF NOT EXISTS buckets

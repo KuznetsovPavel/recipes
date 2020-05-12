@@ -10,7 +10,7 @@ import ru.pkuznetsov.ingredients.model.IngredientName
 import ru.pkuznetsov.ingredients.services.IngredientNameManager
 import ru.pkuznetsov.loaders.connectors.spoonacular.RecipeLoader
 import ru.pkuznetsov.loaders.connectors.spoonacular.SpoonacularLoader.LoaderRecipeId
-import ru.pkuznetsov.loaders.model.LoaderError.CannotFindIngredient
+import ru.pkuznetsov.loaders.model.LoaderError.{CannotFindIngredient, DuplicateIngredients}
 import ru.pkuznetsov.recipes.dao.{IngredientRow, RecipeDao}
 import ru.pkuznetsov.recipes.model.Ingredient
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
@@ -31,12 +31,28 @@ class LoaderService[F[_]](loader: RecipeLoader[F],
         }
       }
 
+    def unionSameIngredients(ingredients: List[Ingredient]): F[List[Ingredient]] = {
+      def checkSameIngs(name: String, list: List[Ingredient]): F[Ingredient] =
+        if (list.map(_.unit).distinct == 1)
+          monad.pure(list.reduce((a, b) => a.copy(amount = a.amount + b.amount)))
+        else monad.raiseError[Ingredient](DuplicateIngredients(id, name))
+
+      ingredients.groupBy(_.name).toList.traverse {
+        case (name, ings) =>
+          ings match {
+            case List(i) => monad.pure(i)
+            case list    => checkSameIngs(name, list)
+          }
+      }
+    }
+
     for {
       _ <- monad.pure(logger.debug(s"loading recipe with id ${id} from Spoonacular"))
       recipe <- loader.getRecipe(id)
       recipeRow <- monad.pure(recipeTableManager.recipe2RecipeRow(recipe))
-      names <- ingredientNameManager.addAndGetNames(recipe.ingredients.map(_.name).distinct)
-      ingRows <- ings2ingRowsWithIds(recipe.ingredients, names)
+      checkedIngs <- unionSameIngredients(recipe.ingredients)
+      names <- ingredientNameManager.addAndGetNames(checkedIngs.map(_.name))
+      ingRows <- ings2ingRowsWithIds(checkedIngs, names)
       result <- recipeDao.saveRecipeWithIngredients(recipeRow, ingRows)
       _ <- monad.pure(logger.debug(s"recipe with id ${id} was loaded succesfully"))
     } yield result

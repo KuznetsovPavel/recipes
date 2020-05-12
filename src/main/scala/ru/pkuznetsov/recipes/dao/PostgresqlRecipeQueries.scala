@@ -32,13 +32,8 @@ object PostgresqlRecipeQueries {
          |WHERE recipeId = ${recipeId}
          |""".stripMargin.query[IngredientRow]
 
-  def selectRecipesByIngredients(ids: NonEmptyList[Int]) = {
-    val first = fr"""
-                    |SELECT recipeId FROM ingredients
-                    |EXCEPT
-                    |  SELECT recipeId FROM ingredients
-                    |  WHERE """.stripMargin
-    val second = Fragments.notIn(fr"ingredientId", ids)
-    (first ++ second).query[Int]
-  }
+  def selectRecipesByIngredients(ids: NonEmptyList[Int]) =
+    (fr"""SELECT DISTINCT i1.recipeId FROM ingredients i1 LEFT JOIN (
+           SELECT recipeId FROM ingredients where """ ++ Fragments.notIn(fr"ingredientId", ids) ++
+      fr") i2 on (i1.recipeId = i2.recipeId) where i2.recipeId is NULL").query[Int]
 }
