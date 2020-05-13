@@ -42,7 +42,7 @@ object LoaderRunner extends IOApp {
     for {
       backend <- AsyncHttpClientCatsBackend[IO]()
       service <- getService(backend)
-      res <- (1 to 3).toList.traverse { x =>
+      res <- (151 to 160).toList.traverse { x => //последние 3 упали
         service.loadAndSave(LoaderRecipeId(x)).handleErrorWith(_ => IO.pure(-x))
       }
       _ = res.foreach(println)
