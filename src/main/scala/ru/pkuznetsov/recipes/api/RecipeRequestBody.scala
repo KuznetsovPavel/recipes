@@ -1,16 +1,10 @@
 package ru.pkuznetsov.recipes.api
 
-import java.net.URI
-
-import cats.effect.Sync
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
-import org.http4s.EntityDecoder
-import org.http4s.circe.jsonOf
-import ru.pkuznetsov.core.util.URIImplicits._
 
 final case class RecipeRequestBody(name: String,
-                                   uri: Option[URI],
+                                   uri: Option[String],
                                    summary: String,
                                    author: String,
                                    cookingTime: Option[Int],
@@ -22,7 +16,6 @@ final case class RecipeRequestBody(name: String,
                                    ingredients: List[IngredientRequest])
 
 object RecipeRequestBody {
-  implicit def recipeDecoder[F[_]: Sync]: EntityDecoder[F, RecipeRequestBody] = jsonOf[F, RecipeRequestBody]
   implicit val decoder: Decoder[RecipeRequestBody] = deriveDecoder[RecipeRequestBody]
   implicit val encoder: Encoder[RecipeRequestBody] = deriveEncoder[RecipeRequestBody]
 }

@@ -1,52 +1,49 @@
 package ru.pkuznetsov.recipes.api
 
-import cats.data.Nested
-import cats.effect.Sync
-import cats.syntax.flatMap._
+import cats.effect.{ContextShift, Sync}
 import cats.syntax.functor._
-import cats.syntax.monadError._
+import cats.syntax.semigroupk._
 import cats.{Applicative, Defer, MonadError}
 import com.typesafe.scalalogging.StrictLogging
-import io.circe.Json
-import io.circe.syntax._
-import org.http4s.{HttpRoutes, Request, Response}
 import ru.pkuznetsov.core.api.Http4sController
-import ru.pkuznetsov.recipes.model.RecipeError.IncorrectRecipeId
-import ru.pkuznetsov.recipes.services.RecipeService
+import ru.pkuznetsov.core.api.TapirJsonCirceImpl._
+import ru.pkuznetsov.core.model.ErrorData
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
+import ru.pkuznetsov.recipes.services.{RecipeService, SaveResponse}
+import sttp.tapir.server.http4s._
+import sttp.tapir.{endpoint, path, stringToPath}
 
 class RecipeController[F[_]: Applicative: Defer: Sync](service: RecipeService[F])(
-    implicit monad: MonadError[F, Throwable])
+    implicit monad: MonadError[F, Throwable],
+    cs: ContextShift[F])
     extends Http4sController[F]
     with StrictLogging {
 
-  override val routes: HttpRoutes[F] = HttpRoutes.of[F] {
-    case recipe @ POST -> Root => saveRecipe(recipe)
-    case GET -> Root / id      => getRecipeById(id)
-    case GET -> Root           => getRecipeByBucket
-  }
+  val saveRecipe = endpoint.post
+    .in("recipe")
+    .in(jsonBody[RecipeRequestBody])
+    .out(jsonBody[SaveResponse])
+    .errorOut(jsonBody[ErrorData])
 
-  private def getRecipeById(id: String): F[Response[F]] = {
-    val res = for {
-      recipeId <- monad.catchNonFatal(id.toInt).adaptError(_ => IncorrectRecipeId(id))
-      recipe <- service.get(RecipeId(recipeId))
-    } yield recipe.asJson
-    checkErrorAndReturn(res)
-  }
+  val getRecipe = endpoint.get
+    .in("recipe" / path[Int])
+    .out(jsonBody[RecipeResponseBody])
+    .errorOut(jsonBody[ErrorData])
 
-  private def saveRecipe(req: Request[F]): F[Response[F]] = {
-    val res = for {
-      recipe <- req.as[RecipeRequestBody]
-      response <- service.save(recipe)
-    } yield Json.obj(("id", Json.fromInt(response)))
-    checkErrorAndReturn(res)
-  }
+  val getRecipeByBucket = endpoint.get
+    .in("recipe")
+    .in("byBucket")
+    .out(jsonBody[List[Int]])
+    .errorOut(jsonBody[ErrorData])
 
-  private def getRecipeByBucket: F[Response[F]] = {
-    val res = for {
-      bucket <- service.getByBucket
-      _ = bucket.map(_.toInt)
-    } yield bucket.map(_.toInt).asJson
-    checkErrorAndReturn(res)
-  }
+  val saveRecipeRoutes = saveRecipe.toRoutes(rrb => service.save(rrb).toTapirResponse)
+
+  val getRecipeRoutes = getRecipe.toRoutes(id => service.get(RecipeId(id)).toTapirResponse)
+
+  val getRecipeByBucketRoutes =
+    getRecipeByBucket.toRoutes(_ => service.getByBucket.map(_.map(_.intValue)).toTapirResponse)
+
+  override val endpoints = List(saveRecipe, getRecipe, getRecipeByBucket)
+
+  override val routes = saveRecipeRoutes <+> getRecipeRoutes <+> getRecipeByBucketRoutes
 }

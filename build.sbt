@@ -33,6 +33,14 @@ libraryDependencies ++= Seq(
   "com.softwaremill.macwire" %% "util" % "2.3.4",
   "com.softwaremill.macwire" %% "proxy" % "2.3.4",
 
+  "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-http4s" % "0.14.5",
+  "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs" % "0.14.5",
+"com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml" % "0.14.5",
+  "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.14.5",
+  "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % "0.14.5",
+  "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % "0.14.5",
+
+
   "org.tpolecat" %% "doobie-scalatest" % "0.8.8" % Test,
   "org.scalatest" %% "scalatest" % "3.0.8" % Test,
   "org.scalamock" %% "scalamock" % "4.4.0" % Test

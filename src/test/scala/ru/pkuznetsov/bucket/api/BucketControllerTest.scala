@@ -12,9 +12,12 @@ import org.scalatest.{FunSuite, Matchers}
 import ru.pkuznetsov.bucket.model.{Bucket, BucketEntry}
 import ru.pkuznetsov.bucket.services.BucketService
 
+import scala.concurrent.ExecutionContext
+
 class BucketControllerTest extends FunSuite with Matchers with MockFactory {
 
   implicit val jsonDecoder = jsonOf[IO, Json]
+  implicit val cs = IO.contextShift(ExecutionContext.global)
 
   val service = mock[BucketService[IO]]
 
@@ -28,18 +31,17 @@ class BucketControllerTest extends FunSuite with Matchers with MockFactory {
 
     val en: Stream[IO, Byte] = Stream.chunk(Chunk.bytes(bucket.asJson.printWith(Printer.noSpaces).getBytes))
     val response = routes
-      .run(Request(method = Method.POST, uri = uri"/", body = en))
+      .run(Request(method = Method.POST, uri = uri"/bucket", body = en))
       .unsafeRunSync()
 
     response.status shouldBe Status.Ok
-    response.as[Json].unsafeRunSync() shouldBe Json.obj()
   }
 
   test("get bucket") {
     (service.getBucket _).expects() returns IO.pure(bucket)
 
     val response = routes
-      .run(Request(method = Method.GET, uri = uri"/"))
+      .run(Request(method = Method.GET, uri = uri"/bucket"))
       .unsafeRunSync()
 
     response.status shouldBe Status.Ok

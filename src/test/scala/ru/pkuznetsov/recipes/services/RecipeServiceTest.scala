@@ -10,9 +10,14 @@ import ru.pkuznetsov.bucket.dao.BucketDao
 import ru.pkuznetsov.bucket.model.{Bucket, BucketEntry}
 import ru.pkuznetsov.ingredients.model.IngredientName
 import ru.pkuznetsov.ingredients.services.IngredientNameManager
-import ru.pkuznetsov.recipes.api.{IngredientRequest, RecipeRequestBody}
+import ru.pkuznetsov.recipes.api.{
+  IngredientRequest,
+  IngredientResponse,
+  RecipeRequestBody,
+  RecipeResponseBody
+}
 import ru.pkuznetsov.recipes.dao.{IngredientRow, RecipeDao, RecipeRow}
-import ru.pkuznetsov.recipes.model.RecipeError.BucketNotExist
+import ru.pkuznetsov.recipes.model.RecipeError.{BucketNotExist, CannotParseURI}
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 import ru.pkuznetsov.recipes.services.RecipeService.{IngredientId, RecipeId}
 
@@ -39,9 +44,25 @@ class RecipeServiceTest extends AsyncFunSuite with Matchers with AsyncMockFactor
                        Ingredient(3, "name3", 0.1, Some("kg")))
   )
 
+  val recipeResponse = RecipeResponseBody(
+    name = "pizza",
+    uri = Some("https://tralala.com/lala/nana/haha"),
+    summary = "this is pizza",
+    author = "Pavel",
+    cookingTime = Some(40),
+    calories = Some(4),
+    protein = Some(40),
+    fat = Some(20),
+    carbohydrates = Some(23),
+    sugar = Some(10),
+    ingredients = List(IngredientResponse("name1", 100, Some("ml")),
+                       IngredientResponse("name2", 10, None),
+                       IngredientResponse("name3", 0.1, Some("kg")))
+  )
+
   val recipeRequest = RecipeRequestBody(
     name = "pizza",
-    uri = Some(URI.create("https://tralala.com/lala/nana/haha")),
+    uri = Some("https://tralala.com/lala/nana/haha"),
     summary = "this is pizza",
     author = "Pavel",
     cookingTime = Some(40),
@@ -89,7 +110,11 @@ class RecipeServiceTest extends AsyncFunSuite with Matchers with AsyncMockFactor
         tableManager.ingRequest2IngRow _ expects (ingReq, RecipeId(0)) returns ingRow
     }
 
-    service.save(recipeRequest).map(result => result shouldBe RecipeId(7))
+    service.save(recipeRequest).map(result => result shouldBe SaveResponse(7))
+  }
+
+  test("save recipe with incorrect uri") {
+    recoverToSucceededIf[CannotParseURI](service.save(recipeRequest.copy(uri = Some("!@#$%%^"))))
   }
 
   test("get recipe") {
@@ -103,11 +128,10 @@ class RecipeServiceTest extends AsyncFunSuite with Matchers with AsyncMockFactor
     tableManager.createRecipeFrom _ expects (recipeRow, ingredientsRow, names) returns
       Future.successful(recipe)
 
-    service.get(RecipeId(42)).map(result => result shouldBe recipe)
+    service.get(RecipeId(42)).map(result => result shouldBe recipeResponse)
   }
 
   test("get recipe by bucket") {
-    val ids = List(RecipeId(1), RecipeId(2), RecipeId(3))
     val bucket = Bucket(
       List(
         BucketEntry(1, 1.2, Some("ml")),
