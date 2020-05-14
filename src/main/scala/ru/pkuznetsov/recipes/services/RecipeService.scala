@@ -47,7 +47,6 @@ class RecipeServiceImpl[F[_]](
         case Some(Failure(_)) => monad.raiseError[Unit](CannotParseURI(recipe.uri.get, RecipeId(0)))
         case _                => monad.pure(())
       }
-      _ = println(URI.create(recipe.uri.get))
       ingredientIds <- monad.pure(recipe.ingredients.map(ing => IngredientId(ing.id)))
       _ <- ingredientNameManager.checkIngredientIds(ingredientIds)
       _ <- monad.pure(logger.debug(s"all ingredient names is correct for: ${ingredientIds.mkString}"))
