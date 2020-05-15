@@ -11,4 +11,5 @@ object LoaderError {
   final case class CannotFindIngredient(name: String) extends LoaderError
   final case class DuplicateIngredients(recipeId: LoaderRecipeId, ingName: String) extends LoaderError
   final case class SpoonacularLoaderError(recipeId: LoaderRecipeId) extends LoaderError
+  final case class SpoonacularRecipeNotFound(recipeId: LoaderRecipeId) extends LoaderError
 }

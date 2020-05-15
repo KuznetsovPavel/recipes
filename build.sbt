@@ -26,13 +26,10 @@ libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-hikari"    % "0.8.8",
   "org.tpolecat" %% "doobie-postgres"  % "0.8.8",
 
-  "com.typesafe" % "config" % "1.4.0",
   "com.github.pureconfig" %% "pureconfig" % "0.12.3",
 
   "com.softwaremill.macwire" %% "macros" % "2.3.4" % "provided",
   "com.softwaremill.macwire" %% "macrosakka" % "2.3.4" % "provided",
-  "com.softwaremill.macwire" %% "util" % "2.3.4",
-  "com.softwaremill.macwire" %% "proxy" % "2.3.4",
 
   "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-http4s" % "0.14.5",
   "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs" % "0.14.5",
