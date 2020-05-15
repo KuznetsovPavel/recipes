@@ -3,10 +3,8 @@ package ru.pkuznetsov.recipes.dao
 import cats.MonadError
 import cats.data.NonEmptyList
 import cats.effect.{Bracket, Resource}
-import cats.free.Free
 import cats.instances.list._
 import cats.syntax.traverse._
-import doobie.free.connection
 import doobie.hikari.HikariTransactor
 import ru.pkuznetsov.core.dao.Dao
 import ru.pkuznetsov.recipes.services.RecipeService.{IngredientId, RecipeId}

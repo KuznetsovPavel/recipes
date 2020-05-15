@@ -20,7 +20,6 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-dsl" % "0.21.3",
   "org.http4s" %% "http4s-blaze-server" % "0.21.3",
   "org.http4s" %% "http4s-blaze-client" % "0.21.3",
-
   "org.http4s" %% "http4s-circe" % "0.21.3",
 
   "org.tpolecat" %% "doobie-core"      % "0.8.8",
@@ -28,6 +27,8 @@ libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-postgres"  % "0.8.8",
 
   "com.typesafe" % "config" % "1.4.0",
+  "com.github.pureconfig" %% "pureconfig" % "0.12.3",
+
   "com.softwaremill.macwire" %% "macros" % "2.3.4" % "provided",
   "com.softwaremill.macwire" %% "macrosakka" % "2.3.4" % "provided",
   "com.softwaremill.macwire" %% "util" % "2.3.4",
