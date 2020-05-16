@@ -7,7 +7,9 @@ import ru.pkuznetsov.bucket.api.BucketController
 import ru.pkuznetsov.bucket.dao.PostgresqlBucketDao
 import ru.pkuznetsov.bucket.services.BucketServiceImpl
 import ru.pkuznetsov.core.api.Http4sController
+import ru.pkuznetsov.ingredients.api.IngredientNamesController
 import ru.pkuznetsov.ingredients.dao.PostgresqlIngredientNamesDao
+import ru.pkuznetsov.ingredients.model.IngredientNameServiceImpl
 import ru.pkuznetsov.ingredients.services.IngredientNameManagerImpl
 import ru.pkuznetsov.recipes.api.RecipeController
 import ru.pkuznetsov.recipes.dao.PostgresqlRecipeDao
@@ -26,11 +28,13 @@ object ControllerComponents {
         val bucketDao = wire[PostgresqlBucketDao[F]]
         val recipeService = wire[RecipeServiceImpl[F]]
         val bucketService = wire[BucketServiceImpl[F]]
+        val ingNameService = wire[IngredientNameServiceImpl[F]]
 
+        val ingredients = wire[IngredientNamesController[F]]
         val recipe = wire[RecipeController[F]]
         val bucket = wire[BucketController[F]]
 
-        List(recipe, bucket)
+        List(recipe, bucket, ingredients)
       }
     }
 

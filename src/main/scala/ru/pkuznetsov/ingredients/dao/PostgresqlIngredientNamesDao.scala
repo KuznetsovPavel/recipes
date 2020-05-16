@@ -12,6 +12,7 @@ import scala.language.implicitConversions
 trait IngredientNamesDao[F[_]] {
   def getByNames(names: NonEmptyList[String]): F[List[IngredientName]]
   def getByIds(names: NonEmptyList[Int]): F[List[IngredientName]]
+  def getAll: F[List[IngredientName]]
   def insertIngName(name: String): F[Int]
 }
 
@@ -36,6 +37,11 @@ class PostgresqlIngredientNamesDao[F[_]](transactor: Resource[F, HikariTransacto
     list.map {
       case (i, str) => IngredientName(IngredientId(i), str)
     }
+
+  def getAll: F[List[IngredientName]] =
+    IngredientNamesPostgresQueries.selectAll
+      .to[List]
+      .map(listOfPair2ListOfIngNames)
 
   def insertIngName(name: String): F[Int] =
     IngredientNamesPostgresQueries

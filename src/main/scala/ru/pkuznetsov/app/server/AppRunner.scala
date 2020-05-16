@@ -1,12 +1,7 @@
 package ru.pkuznetsov.app.server
 
 import cats.effect.{ExitCode, IO, IOApp}
-import ru.pkuznetsov.app.server.components.{
-  ConfigComponent,
-  ControllerComponents,
-  RoutesComponent,
-  ServerComponent
-}
+import ru.pkuznetsov.app.server.components._
 
 object AppRunner extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {

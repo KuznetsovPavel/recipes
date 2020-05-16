@@ -18,6 +18,10 @@ class IngredientNamesPostgresQueriesTest extends DbTest {
     check(IngredientNamesPostgresQueries.selectByIds(NonEmptyList.of(1, 2, 3, 4)))
   }
 
+  test("select all ingredient names", Slow, DbTestTag) {
+    check(IngredientNamesPostgresQueries.selectAll)
+  }
+
   test("select ingredient name by names", Slow, DbTestTag) {
     check(IngredientNamesPostgresQueries.selectByNames(NonEmptyList.of("one", "two", "three")))
   }
