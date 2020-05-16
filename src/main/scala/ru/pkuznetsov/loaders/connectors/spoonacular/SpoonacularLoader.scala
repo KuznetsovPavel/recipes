@@ -4,7 +4,6 @@ import cats.MonadError
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.monadError._
-import cats.syntax.applicativeError._
 import com.typesafe.scalalogging.StrictLogging
 import io.circe.Json
 import ru.pkuznetsov.loaders.connectors.spoonacular.SpoonacularLoader.{
@@ -37,15 +36,15 @@ class SpoonacularLoader[F[_]](backend: Backend[F], apiKey: SpoonacularApiKey)(
       response <- backend.send(request)
       _ <- response.code match {
         case StatusCode.NotFound =>
-          logger.debug(s"recipe with id $recipeId not exist")
+          logger.info(s"recipe with id $recipeId not exist")
           monad.raiseError[Unit](LoaderError.SpoonacularRecipeNotFound(recipeId))
         case _ => monad.pure(())
       }
       recipeJson <- monad.fromEither(response.body).adaptError { ex =>
-        logger.debug(s"cannot load recipe with id $recipeId because $ex")
+        logger.info(s"cannot load recipe with id $recipeId because ${ex.getMessage}")
         LoaderError.SpoonacularLoaderError(recipeId)
       }
-      _ <- monad.pure(logger.debug(s"get recipe with id $recipeId"))
+      _ <- monad.pure(logger.info(s"get recipe with id $recipeId"))
       recipe <- SpoonacularDeserializator.fromResponse[F](recipeJson)
     } yield recipe
 

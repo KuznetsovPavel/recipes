@@ -1,7 +1,6 @@
 package ru.pkuznetsov.app.loader.components
 
 import cats.effect.{Concurrent, ContextShift, Resource}
-import cats.syntax.functor._
 import com.softwaremill.macwire.wire
 import ru.pkuznetsov.app.loader.components.ConfigComponent.LoaderConfig
 import ru.pkuznetsov.app.utill.PsqlIOTranscator
@@ -20,8 +19,11 @@ object ServiceComponent {
     Resource.make(AsyncHttpClientCatsBackend[F]())(_.close()).flatMap { backend =>
       Resource.pure {
         val transactor =
-          PsqlIOTranscator.create(config.psqlUser, config.psqlPassword, config.dbUrl, config.dbThreads)
-        val loader = new SpoonacularLoader(backend, SpoonacularApiKey(config.spoonacularApiKey))
+          PsqlIOTranscator.create(config.database.user,
+                                  config.database.password,
+                                  config.database.url,
+                                  config.database.threads)
+        val loader = new SpoonacularLoader(backend, SpoonacularApiKey(config.spoonacular.apiKey))
         val recipeDao = wire[PostgresqlRecipeDao[F]]
         val ingNameDao = wire[PostgresqlIngredientNamesDao[F]]
         val nameManager = wire[IngredientNameManagerImpl[F]]

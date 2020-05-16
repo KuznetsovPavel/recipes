@@ -47,14 +47,14 @@ class LoaderService[F[_]](loader: RecipeLoader[F],
     }
 
     for {
-      _ <- monad.pure(logger.debug(s"loading recipe with id ${id} from Spoonacular"))
+      _ <- monad.pure(logger.info(s"loading recipe with id ${id} from Spoonacular"))
       recipe <- loader.getRecipe(id)
       recipeRow <- monad.pure(recipeTableManager.recipe2RecipeRow(recipe))
       checkedIngs <- unionSameIngredients(recipe.ingredients)
       names <- ingredientNameManager.addAndGetNames(checkedIngs.map(_.name))
       ingRows <- ings2ingRowsWithIds(checkedIngs, names)
       result <- recipeDao.saveRecipeWithIngredients(recipeRow, ingRows)
-      _ <- monad.pure(logger.debug(s"recipe with id ${id} was loaded succesfully"))
+      _ <- monad.pure(logger.info(s"recipe with id ${id} was loaded succesfully"))
     } yield result
   }
 
