@@ -55,9 +55,9 @@ class RecipeServiceTest extends AsyncFunSuite with Matchers with AsyncMockFactor
     fat = Some(20),
     carbohydrates = Some(23),
     sugar = Some(10),
-    ingredients = List(IngredientResponse("name1", 100, Some("ml")),
-                       IngredientResponse("name2", 10, None),
-                       IngredientResponse("name3", 0.1, Some("kg")))
+    ingredients = List(IngredientResponse("name1", Some(100), Some("ml")),
+                       IngredientResponse("name2", Some(10), None),
+                       IngredientResponse("name3", Some(0.1), Some("kg")))
   )
 
   val recipeRequest = RecipeRequestBody(

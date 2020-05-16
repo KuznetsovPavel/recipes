@@ -12,7 +12,7 @@ object AppRunner extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     val resources = for {
       config <- ConfigComponent[IO]()
-      controllers <- ControllerComponents[IO](config)
+      controllers <- ControllerComponents[IO](config.database)
       route <- RoutesComponent[IO](controllers)
       server <- ServerComponent[IO](config, route)
     } yield server

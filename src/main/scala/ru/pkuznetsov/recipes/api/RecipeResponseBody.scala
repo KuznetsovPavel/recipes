@@ -29,14 +29,15 @@ object RecipeResponseBody {
       recipe.fat,
       recipe.carbohydrates,
       recipe.sugar,
-      recipe.ingredients.map(ing => IngredientResponse(ing.name, ing.amount, ing.unit))
+      recipe.ingredients.map(ing =>
+        IngredientResponse(ing.name, if (ing.amount == 0.0) None else Some(ing.amount), ing.unit))
     )
 
   implicit val decoder: Decoder[RecipeResponseBody] = deriveDecoder[RecipeResponseBody]
   implicit val encoder: Encoder[RecipeResponseBody] = deriveEncoder[RecipeResponseBody]
 }
 
-final case class IngredientResponse(name: String, amount: Double, unit: Option[String])
+final case class IngredientResponse(name: String, amount: Option[Double], unit: Option[String])
 
 object IngredientResponse {
   implicit val decoder: Decoder[IngredientResponse] = deriveDecoder[IngredientResponse]

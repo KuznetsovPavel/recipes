@@ -2,7 +2,7 @@ package ru.pkuznetsov.app.server.components
 
 import cats.effect.{Async, ContextShift, Resource, Sync}
 import com.softwaremill.macwire.wire
-import ru.pkuznetsov.app.utill.PsqlIOTranscator
+import ru.pkuznetsov.app.utill.{PostgresConfig, PsqlIOTranscator}
 import ru.pkuznetsov.bucket.api.BucketController
 import ru.pkuznetsov.bucket.dao.PostgresqlBucketDao
 import ru.pkuznetsov.bucket.services.BucketServiceImpl
@@ -15,12 +15,10 @@ import ru.pkuznetsov.recipes.services.{RecipeServiceImpl, RecipeTableManagerImpl
 
 object ControllerComponents {
 
-  def apply[F[_]: Sync: Async: ContextShift](
-      config: ConfigComponent): Resource[F, List[Http4sController[F]]] =
+  def apply[F[_]: Sync: Async: ContextShift](config: PostgresConfig): Resource[F, List[Http4sController[F]]] =
     Resource.liftF {
       Sync[F].delay {
-        val transactor =
-          PsqlIOTranscator.create(config.psqlUser, config.psqlPassword, config.dbUrl, config.dbThreads)
+        val transactor = PsqlIOTranscator.create(config.user, config.password, config.url, config.threads)
         val recipeDao = wire[PostgresqlRecipeDao[F]]
         val ingredientNamesDao = wire[PostgresqlIngredientNamesDao[F]]
         val ingredientNameManager = wire[IngredientNameManagerImpl[F]]
