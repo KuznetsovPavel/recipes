@@ -19,6 +19,12 @@ object PostgresqlRecipeQueries {
          |WHERE id = ${id}
          |""".stripMargin.query[RecipeRow]
 
+  def deleteRecipe(id: Int) =
+    sql"""
+         |DELETE FROM recipes
+         |WHERE id = ${id}
+         |""".stripMargin.update
+
   def insertIngredient(ing: IngredientRow) =
     sql"""
          |INSERT INTO ingredients (recipeId, ingredientId, amount, unit)
@@ -31,6 +37,12 @@ object PostgresqlRecipeQueries {
          |FROM ingredients
          |WHERE recipeId = ${recipeId}
          |""".stripMargin.query[IngredientRow]
+
+  def deleteIngredients(recipeId: Int) =
+    sql"""
+         |DELETE FROM ingredients
+         |WHERE recipeId = ${recipeId}
+         |""".stripMargin.update
 
   def selectRecipesByIngredients(ids: NonEmptyList[Int]) =
     (fr"""SELECT DISTINCT i1.recipeId FROM ingredients i1 LEFT JOIN (

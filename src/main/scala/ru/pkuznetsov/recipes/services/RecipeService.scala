@@ -23,6 +23,7 @@ import scala.util.{Failure, Try}
 trait RecipeService[F[_]] {
   def save(recipe: RecipeRequestBody): F[SaveResponse]
   def get(id: RecipeId): F[RecipeResponseBody]
+  def delete(id: RecipeId): F[Unit]
   def getByBucket: F[List[RecipeId]]
 }
 
@@ -68,6 +69,14 @@ class RecipeServiceImpl[F[_]](
       recipe <- recipeTableManager.createRecipeFrom(recipeRow, ingredientRows, ingredientNames)
       _ <- monad.pure(logger.debug(s"got recipe $id successfully"))
     } yield RecipeResponseBody.fromRecipe(recipe)
+
+  def delete(id: RecipeId): F[Unit] =
+    for {
+      _ <- monad.pure(logger.debug(s"delete recipe with id $id"))
+      rows <- recipeDao.deleteRecipe(id)
+      _ <- if (rows == 0) monad.raiseError[Unit](RecipeNotExist(id)) else monad.unit
+      _ <- monad.pure(logger.debug(s"recipe with id $id was delete successfully, $rows rows were deleted"))
+    } yield ()
 
   def getByBucket: F[List[RecipeId]] =
     for {

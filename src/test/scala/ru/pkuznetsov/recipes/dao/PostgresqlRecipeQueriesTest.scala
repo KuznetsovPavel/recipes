@@ -37,6 +37,14 @@ class PostgresqlRecipeQueriesTest extends DbTest {
     check(PostgresqlRecipeQueries.selectIngredients(10))
   }
 
+  test("delete recipe", Slow, DbTestTag) {
+    check(PostgresqlRecipeQueries.deleteRecipe(10))
+  }
+
+  test("delete ingredients", Slow, DbTestTag) {
+    check(PostgresqlRecipeQueries.deleteIngredients(10))
+  }
+
   test("select recipe with ingredients", Slow, DbTestTag) {
     check(PostgresqlRecipeQueries.selectRecipesByIngredients(NonEmptyList.of(1, 2, 3, 4)))
   }

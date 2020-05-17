@@ -146,4 +146,18 @@ class RecipeControllerTest extends FunSuite with Matchers with MockFactory {
     response.status shouldBe Status.Ok
     response.as[Json].unsafeRunSync() shouldBe Json.arr(Json.fromInt(1), Json.fromInt(2))
   }
+
+  test("delete recipe") {
+    service.delete _ expects (RecipeId(7)) returns IO.unit
+    val response = routes.run(Request(method = Method.DELETE, uri = uri"/recipe/7")).unsafeRunSync()
+    response.status shouldBe Status.Ok
+  }
+
+  test("delete recipe with incorrect id") {
+    service.delete _ expects (RecipeId(7)) returns IO.raiseError(RecipeNotExist(RecipeId(7)))
+    val response = routes.run(Request(method = Method.DELETE, uri = uri"/recipe/7")).unsafeRunSync()
+    response.status shouldBe Status.BadRequest
+    response.as[Json].unsafeRunSync() shouldBe
+      Json.obj(("error", Json.fromString("recipe with id 7 not exist")))
+  }
 }

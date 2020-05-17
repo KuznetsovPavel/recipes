@@ -12,6 +12,7 @@ import ru.pkuznetsov.recipes.services.RecipeService.{IngredientId, RecipeId}
 trait RecipeDao[F[_]] {
   def saveRecipeWithIngredients(recipe: RecipeRow, ingredients: List[IngredientRow]): F[RecipeId]
   def getRecipe(recipeId: RecipeId): F[Option[RecipeRow]]
+  def deleteRecipe(recipeId: RecipeId): F[Int]
   def getIngredientForRecipe(recipeId: RecipeId): F[List[IngredientRow]]
   def getRecipesByIngredients(ids: NonEmptyList[IngredientId]): F[List[RecipeId]]
 }
@@ -32,6 +33,12 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
 
   def getRecipe(recipeId: RecipeId): F[Option[RecipeRow]] =
     PostgresqlRecipeQueries.selectRecipe(recipeId).option
+
+  def deleteRecipe(recipeId: RecipeId): F[Int] =
+    for {
+      deleteIngredientRows <- PostgresqlRecipeQueries.deleteIngredients(recipeId).run
+      deleteRecipeRows <- PostgresqlRecipeQueries.deleteRecipe(recipeId).run
+    } yield (deleteRecipeRows + deleteIngredientRows)
 
   def getIngredientForRecipe(recipeId: RecipeId): F[List[IngredientRow]] =
     PostgresqlRecipeQueries.selectIngredients(recipeId).to[List]

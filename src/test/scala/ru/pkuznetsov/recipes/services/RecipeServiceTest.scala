@@ -17,7 +17,7 @@ import ru.pkuznetsov.recipes.api.{
   RecipeResponseBody
 }
 import ru.pkuznetsov.recipes.dao.{IngredientRow, RecipeDao, RecipeRow}
-import ru.pkuznetsov.recipes.model.RecipeError.{BucketNotExist, CannotParseURI}
+import ru.pkuznetsov.recipes.model.RecipeError.{BucketNotExist, CannotParseURI, RecipeNotExist}
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 import ru.pkuznetsov.recipes.services.RecipeService.{IngredientId, RecipeId}
 
@@ -152,6 +152,16 @@ class RecipeServiceTest extends AsyncFunSuite with Matchers with AsyncMockFactor
   test("get recipe without bucket") {
     (bucketDao.getBucket _).expects() returns Future.successful(None)
     recoverToSucceededIf[BucketNotExist.type](service.getByBucket)
+  }
+
+  test("delete recipe") {
+    recipeDao.deleteRecipe _ expects RecipeId(7) returns Future.successful(10)
+    service.delete(RecipeId(7)).map(result => result shouldBe ())
+  }
+
+  test("delete recipe with incorrect id") {
+    recipeDao.deleteRecipe _ expects RecipeId(7) returns Future.successful(0)
+    recoverToSucceededIf[RecipeNotExist](service.delete(RecipeId(7)))
   }
 
 }
