@@ -15,6 +15,7 @@ trait RecipeDao[F[_]] {
   def deleteRecipe(recipeId: RecipeId): F[Int]
   def getIngredientForRecipe(recipeId: RecipeId): F[List[IngredientRow]]
   def getRecipesByIngredients(ids: NonEmptyList[IngredientId]): F[List[RecipeId]]
+  def getRecipesByPartIngredients(ids: NonEmptyList[IngredientId], missingIngCount: Int): F[List[RecipeId]]
 }
 
 class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
@@ -51,6 +52,12 @@ class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
   def getRecipesByIngredients(ids: NonEmptyList[IngredientId]) =
     PostgresqlRecipeQueries
       .selectRecipesByIngredients(ids)
+      .to[List]
+      .map(_.map(id => RecipeId(id)))
+
+  def getRecipesByPartIngredients(ids: NonEmptyList[IngredientId], missingIngCount: Int) =
+    PostgresqlRecipeQueries
+      .selectRecipesByPartIngredients(ids, missingIngCount)
       .to[List]
       .map(_.map(id => RecipeId(id)))
 }

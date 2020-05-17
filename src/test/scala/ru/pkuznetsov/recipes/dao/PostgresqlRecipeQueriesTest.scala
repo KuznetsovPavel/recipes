@@ -49,4 +49,8 @@ class PostgresqlRecipeQueriesTest extends DbTest {
     check(PostgresqlRecipeQueries.selectRecipesByIngredients(NonEmptyList.of(1, 2, 3, 4)))
   }
 
+  test("select recipes by part ingredients", Slow, DbTestTag) {
+    check(PostgresqlRecipeQueries.selectRecipesByPartIngredients(NonEmptyList.of(1, 2, 3, 4), 6))
+  }
+
 }

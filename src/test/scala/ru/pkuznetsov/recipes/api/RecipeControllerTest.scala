@@ -10,7 +10,7 @@ import org.http4s.{Method, Request, Status}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{FunSuite, Matchers}
 import ru.pkuznetsov.ingredients.model.IngredientError.EmptyIngredientList
-import ru.pkuznetsov.recipes.model.RecipeError.RecipeNotExist
+import ru.pkuznetsov.recipes.model.RecipeError.{IncorrectMissingIngredients, RecipeNotExist}
 import ru.pkuznetsov.recipes.services.{RecipeService, SaveResponse}
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 
@@ -147,8 +147,29 @@ class RecipeControllerTest extends FunSuite with Matchers with MockFactory {
     response.as[Json].unsafeRunSync() shouldBe Json.arr(Json.fromInt(1), Json.fromInt(2))
   }
 
+  test("get recipes by part of bucket") {
+    service.getByPartOfIngredients _ expects 7 returns IO.pure(List(RecipeId(1), RecipeId(2)))
+
+    val response =
+      routes.run(Request(method = Method.GET, uri = uri"/recipe/missingIngredients/7")).unsafeRunSync()
+
+    response.status shouldBe Status.Ok
+    response.as[Json].unsafeRunSync() shouldBe Json.arr(Json.fromInt(1), Json.fromInt(2))
+  }
+
+  test("get recipes by incorrect part of bucket") {
+    service.getByPartOfIngredients _ expects -7 returns IO.raiseError(IncorrectMissingIngredients)
+
+    val response =
+      routes.run(Request(method = Method.GET, uri = uri"/recipe/missingIngredients/-7")).unsafeRunSync()
+
+    response.status shouldBe Status.BadRequest
+    response.as[Json].unsafeRunSync() shouldBe Json.obj(
+      ("error", Json.fromString("missing ingredient count should be positive")))
+  }
+
   test("delete recipe") {
-    service.delete _ expects (RecipeId(7)) returns IO.unit
+    service.delete _ expects RecipeId(7) returns IO.unit
     val response = routes.run(Request(method = Method.DELETE, uri = uri"/recipe/7")).unsafeRunSync()
     response.status shouldBe Status.Ok
   }
