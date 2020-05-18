@@ -1,43 +1,10 @@
 package ru.pkuznetsov.recipes.dao
 
+import cats.data.NonEmptyList
+import doobie.Fragments
 import doobie.implicits._
 
 object PostgresqlRecipeQueries {
-
-  def createRecipesTable: doobie.Update0 =
-    sql"""
-         |CREATE TABLE IF NOT EXISTS recipes (
-         |  id SERIAL PRIMARY KEY,
-         |  name VARCHAR NOT NULL,
-         |  uri VARCHAR,
-         |  summary TEXT NOT NULL,
-         |  author VARCHAR NOT NULL,
-         |  cookingTime INT,
-         |  calories FLOAT,
-         |  protein FLOAT,
-         |  fat FLOAT,
-         |  carbohydrates FLOAT,
-         |  sugar FLOAT
-         |);
-         |""".stripMargin.update
-
-  def createIngredientNamesTable =
-    sql"""
-         |CREATE TABLE IF NOT EXISTS ingredient_names (
-         |  id SERIAL PRIMARY KEY,
-         |  ingredient VARCHAR UNIQUE NOT NULL
-         |);
-         |""".stripMargin.update
-
-  def createIngredientsTable =
-    sql"""
-         |CREATE TABLE IF NOT EXISTS ingredients (
-         |  recipeId SERIAL REFERENCES recipes (id),
-         |  ingredientId SERIAL REFERENCES ingredient_names (id),
-         |  amount FLOAT NOT NULL,
-         |  unit VARCHAR
-         |);
-         |""".stripMargin.update
 
   def insertRecipe(recipeRow: RecipeRow) =
     sql"""
@@ -58,31 +25,15 @@ object PostgresqlRecipeQueries {
          |VALUES (${ing.recipeId}, ${ing.ingredientId}, ${ing.amount}, ${ing.unit})
          |""".stripMargin.update
 
-  def selectIngredient(recipeId: Int) =
+  def selectIngredients(recipeId: Int) =
     sql"""
          |SELECT recipeId, ingredientId, amount, unit
          |FROM ingredients
          |WHERE recipeId = ${recipeId}
          |""".stripMargin.query[IngredientRow]
 
-  def insertIngredientName(name: String) =
-    sql"""
-         |INSERT INTO ingredient_names (ingredient)
-         |VALUES ($name)
-         |""".stripMargin.update
-
-  def selectIngredientNameId(name: String) = {
-    sql"""
-         |SELECT id FROM ingredient_names
-         |WHERE  ingredient = ${name}
-         |""".stripMargin.query[Int]
-  }
-
-  def selectIngredientName(id: Int) = {
-    sql"""
-         |SELECT id, ingredient FROM ingredient_names
-         |WHERE  id = ${id}
-         |""".stripMargin.query[(Int, String)]
-  }
-
+  def selectRecipesByIngredients(ids: NonEmptyList[Int]) =
+    (fr"""SELECT DISTINCT i1.recipeId FROM ingredients i1 LEFT JOIN (
+           SELECT recipeId FROM ingredients where """ ++ Fragments.notIn(fr"ingredientId", ids) ++
+      fr") i2 on (i1.recipeId = i2.recipeId) where i2.recipeId is NULL").query[Int]
 }

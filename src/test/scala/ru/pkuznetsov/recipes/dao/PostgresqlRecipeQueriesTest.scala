@@ -1,37 +1,12 @@
 package ru.pkuznetsov.recipes.dao
 
-import cats.effect.IO
-import doobie.util.transactor.Transactor
+import cats.data.NonEmptyList
 import org.scalatest.tagobjects.Slow
-import org.scalatest.{FunSuite, Matchers, Tag}
+import ru.pkuznetsov.core.dao.{DbTest, DbTestTag}
 
-import scala.concurrent.ExecutionContext
+class PostgresqlRecipeQueriesTest extends DbTest {
 
-object DbTest extends Tag("DbTest")
-
-class PostgresqlRecipeQuiresTest extends FunSuite with Matchers with doobie.scalatest.IOChecker {
-  implicit val cs = IO.contextShift(ExecutionContext.global)
-
-  override def transactor = Transactor.fromDriverManager[IO](
-    "org.postgresql.Driver",
-    "jdbc:postgresql:recipes",
-    "pavel",
-    "password"
-  )
-
-  test("create ingredients table", Slow, DbTest) {
-    check(PostgresqlRecipeQueries.createIngredientsTable)
-  }
-
-  test("create ingredient names table", Slow, DbTest) {
-    check(PostgresqlRecipeQueries.createIngredientNamesTable)
-  }
-
-  test("create recipes table", Slow, DbTest) {
-    check(PostgresqlRecipeQueries.createRecipesTable)
-  }
-
-  test("insert recipe", Slow, DbTest) {
+  test("insert recipe", Slow, DbTestTag) {
     check(
       PostgresqlRecipeQueries.insertRecipe(
         RecipeRow(
@@ -50,24 +25,20 @@ class PostgresqlRecipeQuiresTest extends FunSuite with Matchers with doobie.scal
     )
   }
 
-  test("select recipe", Slow, DbTest) {
+  test("select recipe", Slow, DbTestTag) {
     check(PostgresqlRecipeQueries.selectRecipe(10))
   }
 
-  test("insert ingredient", Slow, DbTest) {
+  test("insert ingredient", Slow, DbTestTag) {
     check(PostgresqlRecipeQueries.insertIngredient(IngredientRow(10, 100, 123.23, Some("ml"))))
   }
 
-  test("select ingredient", Slow, DbTest) {
-    check(PostgresqlRecipeQueries.selectIngredient(10))
+  test("select ingredient", Slow, DbTestTag) {
+    check(PostgresqlRecipeQueries.selectIngredients(10))
   }
 
-  test("insert ingredient name", Slow, DbTest) {
-    check(PostgresqlRecipeQueries.insertIngredientName("banana"))
-  }
-
-  test("select ingredient name", Slow, DbTest) {
-    check(PostgresqlRecipeQueries.selectIngredientNameId("banana"))
+  test("select recipe with ingredients", Slow, DbTestTag) {
+    check(PostgresqlRecipeQueries.selectRecipesByIngredients(NonEmptyList.of(1, 2, 3, 4)))
   }
 
 }

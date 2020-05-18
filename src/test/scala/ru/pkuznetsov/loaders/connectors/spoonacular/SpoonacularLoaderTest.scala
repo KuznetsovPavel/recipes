@@ -1,4 +1,4 @@
-package ru.pkuznetsov.recipes.loaders
+package ru.pkuznetsov.loaders.connectors.spoonacular
 
 import java.net.URI
 
@@ -6,8 +6,8 @@ import cats.instances.future._
 import io.circe.ParsingFailure
 import io.circe.parser.parse
 import org.scalatest.{AsyncFunSuite, Matchers}
-import ru.pkuznetsov.recipes.loaders.SpoonacularLoader._
-import ru.pkuznetsov.recipes.model.Errors.{CannotParseData, SpoonacularError}
+import ru.pkuznetsov.loaders.connectors.spoonacular.SpoonacularLoader.{LoaderRecipeId, SpoonacularApiKey}
+import ru.pkuznetsov.loaders.model.LoaderError.{CannotParseJson, SpoonacularLoaderError}
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 import sttp.client.testing._
 
@@ -31,16 +31,16 @@ class SpoonacularLoaderTest extends AsyncFunSuite with Matchers {
       carbohydrates = None,
       sugar = None,
       ingredients = List(
-        Ingredient(0L, "bell pepper", 6, Some("servings")),
-        Ingredient(0L, "chillies", 1, None),
-        Ingredient(0L, "coarse sea salt", 6, Some("servings")),
-        Ingredient(0L, "extra-virgin olive oil", 6, Some("servings")),
-        Ingredient(0L, "fresh anchovies", 500, Some("grams")),
-        Ingredient(0L, "fresh parsley", 6, Some("servings")),
-        Ingredient(0L, "fresh thyme", 6, Some("servings")),
-        Ingredient(0L, "garlic cloves", 1, None),
-        Ingredient(0L, "juice of lemon", 1, None),
-        Ingredient(0L, "sherry vinegar", 5, Some("Tbsps"))
+        Ingredient(0, "bell pepper", 6, Some("servings")),
+        Ingredient(0, "chillies", 1, None),
+        Ingredient(0, "coarse sea salt", 6, Some("servings")),
+        Ingredient(0, "extra-virgin olive oil", 6, Some("servings")),
+        Ingredient(0, "fresh anchovies", 500, Some("grams")),
+        Ingredient(0, "fresh parsley", 6, Some("servings")),
+        Ingredient(0, "fresh thyme", 6, Some("servings")),
+        Ingredient(0, "garlic cloves", 1, None),
+        Ingredient(0, "juice of lemon", 1, None),
+        Ingredient(0, "sherry vinegar", 5, Some("Tbsps"))
       )
     )
 
@@ -51,9 +51,9 @@ class SpoonacularLoaderTest extends AsyncFunSuite with Matchers {
         _.uri.toJavaUri == new URI("https://api.spoonacular.com/recipes/10/information?apiKey=someApi"))
       .thenRespond(data)
 
-    val loader = new SpoonacularLoader[Future](backend, "someApi")
+    val loader = new SpoonacularLoader[Future](backend, SpoonacularApiKey("someApi"))
 
-    loader.getRecipe(SpoonacularRecipeId(10L)).map { result =>
+    loader.getRecipe(LoaderRecipeId(10)).map { result =>
       result shouldBe recipe
     }
   }
@@ -65,25 +65,25 @@ class SpoonacularLoaderTest extends AsyncFunSuite with Matchers {
         .mkString
         .replace(
           """"amount": 6,
-        |          "unitShort": "servings",
-        |          "unitLong": "servings"""".stripMargin,
+            |          "unitShort": "servings",
+            |          "unitLong": "servings"""".stripMargin,
           """"ahahaha":"hahaha""""
         ))
 
     val backend = SttpBackendStub.asynchronousFuture.whenAnyRequest
       .thenRespond(data)
 
-    val loader = new SpoonacularLoader[Future](backend, "someApi")
+    val loader = new SpoonacularLoader[Future](backend, SpoonacularApiKey("someApi"))
 
-    recoverToSucceededIf[CannotParseData](loader.getRecipe(SpoonacularRecipeId(10L)))
+    recoverToSucceededIf[CannotParseJson](loader.getRecipe(LoaderRecipeId(10)))
   }
 
   test("backend return error") {
     val backend = SttpBackendStub.asynchronousFuture.whenAnyRequest
       .thenRespond(Left(ParsingFailure("incorrect data", new IllegalArgumentException(""))))
 
-    val loader = new SpoonacularLoader[Future](backend, "someApi")
-    recoverToSucceededIf[SpoonacularError](loader.getRecipe(SpoonacularRecipeId(10L)))
+    val loader = new SpoonacularLoader[Future](backend, SpoonacularApiKey("someApi"))
+    recoverToSucceededIf[SpoonacularLoaderError](loader.getRecipe(LoaderRecipeId(10)))
   }
 
 }

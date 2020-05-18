@@ -1,15 +1,18 @@
-package ru.pkuznetsov.recipes.model
+package ru.pkuznetsov.loaders.connectors.spoonacular
 
 import java.net.URI
 
-import cats.effect.IO
+import cats.instances.future._
 import io.circe.Json
-import io.circe.parser._
-import org.scalatest.{FunSuite, Matchers}
+import io.circe.parser.parse
+import org.scalatest.{AsyncFunSuite, Matchers}
+import ru.pkuznetsov.loaders.model.LoaderError
+import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 
+import scala.concurrent.Future
 import scala.io.Source
 
-class RecipeTest extends FunSuite with Matchers {
+class SpoonacularDeserializatorTest extends AsyncFunSuite with Matchers {
 
   test("parse correct spoonacular data") {
     val recipe = Recipe(
@@ -26,43 +29,42 @@ class RecipeTest extends FunSuite with Matchers {
       carbohydrates = None,
       sugar = None,
       ingredients = List(
-        Ingredient(0L, "bell pepper", 6, Some("servings")),
-        Ingredient(0L, "chillies", 1, None),
-        Ingredient(0L, "coarse sea salt", 6, Some("servings")),
-        Ingredient(0L, "extra-virgin olive oil", 6, Some("servings")),
-        Ingredient(0L, "fresh anchovies", 500, Some("grams")),
-        Ingredient(0L, "fresh parsley", 6, Some("servings")),
-        Ingredient(0L, "fresh thyme", 6, Some("servings")),
-        Ingredient(0L, "garlic cloves", 1, None),
-        Ingredient(0L, "juice of lemon", 1, None),
-        Ingredient(0L, "sherry vinegar", 5, Some("Tbsps"))
+        Ingredient(0, "bell pepper", 6, Some("servings")),
+        Ingredient(0, "chillies", 1, None),
+        Ingredient(0, "coarse sea salt", 6, Some("servings")),
+        Ingredient(0, "extra-virgin olive oil", 6, Some("servings")),
+        Ingredient(0, "fresh anchovies", 500, Some("grams")),
+        Ingredient(0, "fresh parsley", 6, Some("servings")),
+        Ingredient(0, "fresh thyme", 6, Some("servings")),
+        Ingredient(0, "garlic cloves", 1, None),
+        Ingredient(0, "juice of lemon", 1, None),
+        Ingredient(0, "sherry vinegar", 5, Some("Tbsps"))
       )
     )
 
     val result = for {
-      str <- IO(Source.fromResource("SpoonacularResponse.json").mkString)
-      json <- IO(parse(str).getOrElse(Json.fromString("")))
-      recipe <- Recipe.fromSpoonacularResponse[IO](json)
+      str <- Future(Source.fromResource("SpoonacularResponse.json").mkString)
+      json <- Future(parse(str).getOrElse(Json.fromString("")))
+      recipe <- SpoonacularDeserializator.fromResponse[Future](json)
     } yield recipe
 
-    result.unsafeRunSync() shouldBe recipe
+    result.map(_ shouldBe recipe)
   }
 
   test("parse incorrect spoonacular data") {
     val result = for {
-      str <- IO(Source.fromResource("SpoonacularResponse.json").mkString)
-      incorrect <- IO(
+      str <- Future(Source.fromResource("SpoonacularResponse.json").mkString)
+      incorrect <- Future(
         str.replace(
           """"amount": 6,
-          |          "unitShort": "servings",
-          |          "unitLong": "servings"""".stripMargin,
+            |          "unitShort": "servings",
+            |          "unitLong": "servings"""".stripMargin,
           """"ahahaha":"hahaha""""
         ))
-      json <- IO(parse(incorrect).getOrElse(Json.fromString("")))
-      recipe <- Recipe.fromSpoonacularResponse[IO](json)
+      json <- Future(parse(incorrect).getOrElse(Json.fromString("")))
+      recipe <- SpoonacularDeserializator.fromResponse[Future](json)
     } yield recipe
-
-    an[Errors.CannotParseData] shouldBe thrownBy(result.unsafeRunSync())
+    recoverToSucceededIf[LoaderError.CannotParseJson](result)
   }
 
 }

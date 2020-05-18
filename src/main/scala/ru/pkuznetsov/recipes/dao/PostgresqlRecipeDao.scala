@@ -1,78 +1,49 @@
 package ru.pkuznetsov.recipes.dao
 
 import cats.MonadError
+import cats.data.NonEmptyList
 import cats.effect.{Bracket, Resource}
-import cats.free.Free
 import cats.instances.list._
-import cats.syntax.flatMap._
 import cats.syntax.traverse._
-import doobie.free.connection
 import doobie.hikari.HikariTransactor
-import doobie.implicits.toConnectionIOOps
-import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
-import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
+import ru.pkuznetsov.core.dao.Dao
+import ru.pkuznetsov.recipes.services.RecipeService.{IngredientId, RecipeId}
 
-import scala.language.implicitConversions
+trait RecipeDao[F[_]] {
+  def saveRecipeWithIngredients(recipe: RecipeRow, ingredients: List[IngredientRow]): F[RecipeId]
+  def getRecipe(recipeId: RecipeId): F[Option[RecipeRow]]
+  def getIngredientForRecipe(recipeId: RecipeId): F[List[IngredientRow]]
+  def getRecipesByIngredients(ids: NonEmptyList[IngredientId]): F[List[RecipeId]]
+}
 
-class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]], manager: RecipeTableManager[F])(
+class PostgresqlRecipeDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
     implicit bracket: Bracket[F, Throwable],
     monad: MonadError[F, Throwable]
-) {
+) extends Dao[F](transactor)
+    with RecipeDao[F] {
 
-  implicit def connectionIO2F[A](transaction: Free[connection.ConnectionOp, A]): F[A] =
-    transactor.use(transactor => transaction.transact(transactor))
-
-  def createTables: F[Unit] =
-    for {
-      _ <- PostgresqlRecipeQueries.createRecipesTable.run
-      _ <- PostgresqlRecipeQueries.createIngredientNamesTable.run
-      _ <- PostgresqlRecipeQueries.createIngredientsTable.run
-    } yield ()
-
-  def insertRecipe(recipe: Recipe): F[Int] =
+  def saveRecipeWithIngredients(recipe: RecipeRow, ingredients: List[IngredientRow]): F[RecipeId] =
     for {
       recipeId <- PostgresqlRecipeQueries
-        .insertRecipe(manager.recipe2RecipeRow(recipe))
+        .insertRecipe(recipe)
         .withUniqueGeneratedKeys[Int]("id")
-      _ <- recipe.ingredients.traverse(insertIngredient(_, recipeId))
-    } yield recipeId
+      _ <- ingredients.traverse(saveIngredient(_, recipeId))
+    } yield RecipeId(recipeId)
 
-  def selectRecipe(recipeId: RecipeId): F[Recipe] = {
-    val fromTable: F[(Option[RecipeRow], List[IngredientRow], Map[Int, String])] = for {
-      recipeRowOpt <- PostgresqlRecipeQueries.selectRecipe(recipeId).option
-      ingRows <- PostgresqlRecipeQueries.selectIngredient(recipeId).to[List]
-      names <- ingRows
-        .map(_.ingredientId)
-        .traverse(id => PostgresqlRecipeQueries.selectIngredientName(id).option)
-    } yield (recipeRowOpt, ingRows, names.flatten.toMap)
+  def getRecipe(recipeId: RecipeId): F[Option[RecipeRow]] =
+    PostgresqlRecipeQueries.selectRecipe(recipeId).option
 
-    fromTable.flatMap {
-      case (recipe, ings, names) => manager.createRecipeFrom(recipeId, recipe, ings, names)
-    }
-  }
+  def getIngredientForRecipe(recipeId: RecipeId): F[List[IngredientRow]] =
+    PostgresqlRecipeQueries.selectIngredients(recipeId).to[List]
 
-  private def insertIngredient(ingredient: Ingredient, recipeId: Int): Free[connection.ConnectionOp, Int] = {
-    def getIngNameId =
-      PostgresqlRecipeQueries
-        .selectIngredientNameId(ingredient.name)
-        .option
+  private def saveIngredient(ingredient: IngredientRow, recipeId: Int) =
+    PostgresqlRecipeQueries
+      .insertIngredient(IngredientRow(recipeId, ingredient.ingredientId, ingredient.amount, ingredient.unit))
+      .run
 
-    def insertIngName: doobie.ConnectionIO[Int] =
-      PostgresqlRecipeQueries
-        .insertIngredientName(ingredient.name)
-        .withUniqueGeneratedKeys[Int]("id")
-
-    def insertIng(ingNameId: Int) =
-      PostgresqlRecipeQueries
-        .insertIngredient(IngredientRow(recipeId, ingNameId, ingredient.amount, ingredient.unit))
-        .run
-
-    for {
-      optIngNameId <- getIngNameId
-      result <- optIngNameId match {
-        case Some(value) => insertIng(value)
-        case None        => insertIngName.flatMap(insertIng)
-      }
-    } yield result
-  }
+  def getRecipesByIngredients(ids: NonEmptyList[IngredientId]) =
+    PostgresqlRecipeQueries
+      .selectRecipesByIngredients(ids)
+      .to[List]
+      .map(_.map(id => RecipeId(id)))
 }

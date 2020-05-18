@@ -1,18 +1,20 @@
-package ru.pkuznetsov.recipes.dao
+package ru.pkuznetsov.recipes.services
 
 import java.net.URI
 
 import cats.instances.future._
 import org.scalatest.{AsyncFunSuite, Matchers}
-import ru.pkuznetsov.recipes.model.Errors.{CannotFindIngredientName, CannotParseURI, RecipeNotExist}
+import ru.pkuznetsov.ingredients.model.IngredientName
+import ru.pkuznetsov.recipes.dao.{IngredientRow, RecipeRow}
+import ru.pkuznetsov.recipes.model.RecipeError.{CannotFindIngredient, CannotParseURI}
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
-import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
+import ru.pkuznetsov.recipes.services.RecipeService.IngredientId
 
 import scala.concurrent.Future
 
 class RecipeTableManagerTest extends AsyncFunSuite with Matchers {
 
-  val manager = new RecipeTableManager[Future]()
+  val manager = new RecipeTableManagerImpl[Future]()
 
   val recipeRow = RecipeRow(
     recipeId = 0,
@@ -32,7 +34,9 @@ class RecipeTableManagerTest extends AsyncFunSuite with Matchers {
                          IngredientRow(0, 2, 10, None),
                          IngredientRow(0, 3, 0.1, Some("kg")))
 
-  val names = Map(1 -> "name1", 2 -> "name2", 3 -> "name3")
+  val names = List(IngredientName(IngredientId(1), "name1"),
+                   IngredientName(IngredientId(2), "name2"),
+                   IngredientName(IngredientId(3), "name3"))
 
   val recipe = Recipe(
     id = 0,
@@ -52,23 +56,19 @@ class RecipeTableManagerTest extends AsyncFunSuite with Matchers {
   )
 
   test("correct data") {
-    manager.createRecipeFrom(RecipeId(0), Some(recipeRow), ingredients, names).map { result =>
+    manager.createRecipeFrom(recipeRow, ingredients, names).map { result =>
       result shouldBe recipe
     }
   }
 
-  test("no recipe") {
-    recoverToSucceededIf[RecipeNotExist](manager.createRecipeFrom(RecipeId(0), None, ingredients, names))
-  }
-
   test("no ingredient name") {
-    recoverToSucceededIf[CannotFindIngredientName](
-      manager.createRecipeFrom(RecipeId(0), Some(recipeRow), ingredients, names.removed(1)))
+    recoverToSucceededIf[CannotFindIngredient](
+      manager.createRecipeFrom(recipeRow, ingredients, names.drop(1)))
   }
 
   test("incorrect uri") {
     recoverToSucceededIf[CannotParseURI](
-      manager.createRecipeFrom(RecipeId(0), Some(recipeRow.copy(uri = Some("!@$%"))), ingredients, names))
+      manager.createRecipeFrom(recipeRow.copy(uri = Some("!@$%")), ingredients, names))
   }
 
 }
