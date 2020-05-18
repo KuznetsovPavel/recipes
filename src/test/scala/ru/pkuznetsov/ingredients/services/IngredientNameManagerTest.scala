@@ -1,9 +1,9 @@
 package ru.pkuznetsov.ingredients.services
 
 import cats.data.NonEmptyList
-import cats.instances.future._
 import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.{AsyncFunSuite, Matchers}
+import ru.pkuznetsov.core.utils.FutureSyncForTest
 import ru.pkuznetsov.ingredients.dao.IngredientNamesDao
 import ru.pkuznetsov.ingredients.model.IngredientError._
 import ru.pkuznetsov.ingredients.model.IngredientName
@@ -14,6 +14,7 @@ import scala.concurrent.Future
 class IngredientNameManagerTest extends AsyncFunSuite with Matchers with AsyncMockFactory {
 
   val dao = mock[IngredientNamesDao[Future]]
+  implicit val futureSync = new FutureSyncForTest().futureSync
   val manager = new IngredientNameManagerImpl[Future](dao)
   val names = List("name1", "name2", "name3")
   val ids = List(IngredientId(1), IngredientId(2), IngredientId(3))

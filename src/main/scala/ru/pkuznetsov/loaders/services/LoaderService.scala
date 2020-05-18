@@ -1,6 +1,7 @@
 package ru.pkuznetsov.loaders.services
 
 import cats.MonadError
+import cats.effect.Sync
 import cats.instances.list._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
@@ -16,10 +17,11 @@ import ru.pkuznetsov.recipes.model.Ingredient
 import ru.pkuznetsov.recipes.services.RecipeService.RecipeId
 import ru.pkuznetsov.recipes.services.RecipeTableManager
 
-class LoaderService[F[_]](loader: RecipeLoader[F],
-                          recipeDao: RecipeDao[F],
-                          ingredientNameManager: IngredientNameManager[F],
-                          recipeTableManager: RecipeTableManager[F])(implicit monad: MonadError[F, Throwable])
+class LoaderService[F[_]: Sync](
+    loader: RecipeLoader[F],
+    recipeDao: RecipeDao[F],
+    ingredientNameManager: IngredientNameManager[F],
+    recipeTableManager: RecipeTableManager[F])(implicit monad: MonadError[F, Throwable])
     extends StrictLogging {
 
   def loadAndSave(id: LoaderRecipeId): F[RecipeId] = {
@@ -47,14 +49,14 @@ class LoaderService[F[_]](loader: RecipeLoader[F],
     }
 
     for {
-      _ <- monad.pure(logger.info(s"loading recipe with id ${id} from Spoonacular"))
+      _ <- Sync[F].delay(logger.info(s"loading recipe with id ${id} from Spoonacular"))
       recipe <- loader.getRecipe(id)
       recipeRow <- monad.pure(recipeTableManager.recipe2RecipeRow(recipe))
       checkedIngs <- unionSameIngredients(recipe.ingredients)
       names <- ingredientNameManager.addAndGetNames(checkedIngs.map(_.name))
       ingRows <- ings2ingRowsWithIds(checkedIngs, names)
       result <- recipeDao.saveRecipeWithIngredients(recipeRow, ingRows)
-      _ <- monad.pure(logger.info(s"recipe with id ${id} was loaded succesfully"))
+      _ <- Sync[F].delay(logger.info(s"recipe with id ${id} was loaded succesfully"))
     } yield result
   }
 

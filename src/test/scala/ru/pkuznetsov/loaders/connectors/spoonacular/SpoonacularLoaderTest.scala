@@ -2,10 +2,10 @@ package ru.pkuznetsov.loaders.connectors.spoonacular
 
 import java.net.URI
 
-import cats.instances.future._
 import io.circe.ParsingFailure
 import io.circe.parser.parse
 import org.scalatest.{AsyncFunSuite, Matchers}
+import ru.pkuznetsov.core.utils.FutureSyncForTest
 import ru.pkuznetsov.loaders.connectors.spoonacular.SpoonacularLoader.{LoaderRecipeId, SpoonacularApiKey}
 import ru.pkuznetsov.loaders.model.LoaderError.{CannotParseJson, SpoonacularLoaderError}
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
@@ -15,6 +15,8 @@ import scala.concurrent.Future
 import scala.io.Source
 
 class SpoonacularLoaderTest extends AsyncFunSuite with Matchers {
+
+  implicit val futureSync = new FutureSyncForTest().futureSync
 
   test("load by id") {
     val recipe = Recipe(

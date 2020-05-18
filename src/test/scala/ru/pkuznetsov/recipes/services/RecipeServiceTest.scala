@@ -3,11 +3,11 @@ package ru.pkuznetsov.recipes.services
 import java.net.URI
 
 import cats.data.NonEmptyList
-import cats.instances.future._
 import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.{AsyncFunSuite, Matchers}
 import ru.pkuznetsov.bucket.dao.BucketDao
 import ru.pkuznetsov.bucket.model.{Bucket, BucketEntry}
+import ru.pkuznetsov.core.utils.FutureSyncForTest
 import ru.pkuznetsov.ingredients.model.IngredientName
 import ru.pkuznetsov.ingredients.services.IngredientNameManager
 import ru.pkuznetsov.recipes.api.{
@@ -29,8 +29,8 @@ import ru.pkuznetsov.recipes.services.RecipeService.{IngredientId, RecipeId}
 import scala.concurrent.{ExecutionContext, Future}
 
 class RecipeServiceTest extends AsyncFunSuite with Matchers with AsyncMockFactory {
-
   implicit val ex = ExecutionContext.global
+  implicit val futureSync = new FutureSyncForTest().futureSync
 
   val recipe = Recipe(
     id = 42,
