@@ -22,7 +22,7 @@ class SchedulerService[F[_]: Timer](service: LoaderService[F], config: Spoonacul
     def handleRecipe(id: Int) = {
       service
         .loadAndSave(LoaderRecipeId(id))
-        .map(_ => println(s"load recipe $id successfully"))
+        .map(_ => println(s"recipe was load $id successfully"))
         .handleError(_ => println(s"recipe $id was not load"))
     }
 
