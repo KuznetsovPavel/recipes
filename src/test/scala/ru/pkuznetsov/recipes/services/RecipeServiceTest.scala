@@ -17,7 +17,12 @@ import ru.pkuznetsov.recipes.api.{
   RecipeResponseBody
 }
 import ru.pkuznetsov.recipes.dao.{IngredientRow, RecipeDao, RecipeRow}
-import ru.pkuznetsov.recipes.model.RecipeError.{BucketNotExist, CannotParseURI}
+import ru.pkuznetsov.recipes.model.RecipeError.{
+  BucketNotExist,
+  CannotParseURI,
+  IncorrectMissingIngredients,
+  RecipeNotExist
+}
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 import ru.pkuznetsov.recipes.services.RecipeService.{IngredientId, RecipeId}
 
@@ -149,9 +154,41 @@ class RecipeServiceTest extends AsyncFunSuite with Matchers with AsyncMockFactor
     service.getByBucket.map(result => result shouldBe List(RecipeId(1), RecipeId(2)))
   }
 
+  test("get recipe by bucket with missing ingredients") {
+    val bucket = Bucket(
+      List(
+        BucketEntry(1, 1.2, Some("ml")),
+        BucketEntry(2, 2.2, None),
+        BucketEntry(3, 4.2, Some("ml"))
+      ))
+
+    (bucketDao.getBucket _).expects() returns Future.successful(Some(bucket))
+
+    recipeDao.getRecipesByPartIngredients _ expects (NonEmptyList.of(IngredientId(1),
+                                                                     IngredientId(2),
+                                                                     IngredientId(3)), 7) returns
+      Future.successful(List(RecipeId(1), RecipeId(2)))
+
+    service.getByPartOfIngredients(7).map(result => result shouldBe List(RecipeId(1), RecipeId(2)))
+  }
+
+  test("incorrect missing ingredient count") {
+    recoverToSucceededIf[IncorrectMissingIngredients.type](service.getByPartOfIngredients(0))
+  }
+
   test("get recipe without bucket") {
     (bucketDao.getBucket _).expects() returns Future.successful(None)
     recoverToSucceededIf[BucketNotExist.type](service.getByBucket)
+  }
+
+  test("delete recipe") {
+    recipeDao.deleteRecipe _ expects RecipeId(7) returns Future.successful(10)
+    service.delete(RecipeId(7)).map(result => result shouldBe ())
+  }
+
+  test("delete recipe with incorrect id") {
+    recipeDao.deleteRecipe _ expects RecipeId(7) returns Future.successful(0)
+    recoverToSucceededIf[RecipeNotExist](service.delete(RecipeId(7)))
   }
 
 }

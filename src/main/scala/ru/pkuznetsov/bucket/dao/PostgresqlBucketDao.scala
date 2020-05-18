@@ -25,7 +25,9 @@ class PostgresqlBucketDao[F[_]](transactor: Resource[F, HikariTransactor[F]])(
         .map(_ => ())
     } yield res
 
-  def getBucket: F[Option[Bucket]] =
+  override def getBucket: F[Option[Bucket]] =
+    //we read all rows from table because system work with single user (yet)
+    //when multitenancy will be implemented, it should be fixed
     PostgresqlBucketQueries.selectBucket.to[List].map {
       case Nil  => None
       case list => Some(Bucket(list))

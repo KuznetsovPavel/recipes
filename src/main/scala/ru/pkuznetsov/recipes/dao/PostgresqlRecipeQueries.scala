@@ -19,6 +19,12 @@ object PostgresqlRecipeQueries {
          |WHERE id = ${id}
          |""".stripMargin.query[RecipeRow]
 
+  def deleteRecipe(id: Int) =
+    sql"""
+         |DELETE FROM recipes
+         |WHERE id = ${id}
+         |""".stripMargin.update
+
   def insertIngredient(ing: IngredientRow) =
     sql"""
          |INSERT INTO ingredients (recipeId, ingredientId, amount, unit)
@@ -32,8 +38,20 @@ object PostgresqlRecipeQueries {
          |WHERE recipeId = ${recipeId}
          |""".stripMargin.query[IngredientRow]
 
+  def deleteIngredients(recipeId: Int) =
+    sql"""
+         |DELETE FROM ingredients
+         |WHERE recipeId = ${recipeId}
+         |""".stripMargin.update
+
   def selectRecipesByIngredients(ids: NonEmptyList[Int]) =
     (fr"""SELECT DISTINCT i1.recipeId FROM ingredients i1 LEFT JOIN (
-           SELECT recipeId FROM ingredients where """ ++ Fragments.notIn(fr"ingredientId", ids) ++
-      fr") i2 on (i1.recipeId = i2.recipeId) where i2.recipeId is NULL").query[Int]
+           SELECT recipeId FROM ingredients WHERE """ ++ Fragments.notIn(fr"ingredientId", ids) ++
+      fr") i2 ON (i1.recipeId = i2.recipeId) WHERE i2.recipeId IS NULL").query[Int]
+
+  def selectRecipesByPartIngredients(ids: NonEmptyList[Int], missingIngredients: Long) =
+    (fr"""SELECT i1.recipeId FROM ingredients i1 LEFT JOIN (
+      SELECT recipeId, ingredientId FROM ingredients WHERE """ ++ Fragments.notIn(fr"ingredientId", ids) ++
+      fr""") i2 ON (i1.recipeId = i2.recipeId AND i1.ingredientid = i2.ingredientid)
+        GROUP BY (i1.recipeid) HAVING count(i2.ingredientid) < $missingIngredients""").query[Int]
 }

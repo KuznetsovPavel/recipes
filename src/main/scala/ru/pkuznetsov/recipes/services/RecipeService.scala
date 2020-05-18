@@ -14,7 +14,13 @@ import ru.pkuznetsov.bucket.model.Bucket
 import ru.pkuznetsov.ingredients.services.IngredientNameManager
 import ru.pkuznetsov.recipes.api.{RecipeRequestBody, RecipeResponseBody}
 import ru.pkuznetsov.recipes.dao.RecipeDao
-import ru.pkuznetsov.recipes.model.RecipeError.{BucketNotExist, CannotParseURI, EmptyBucket, RecipeNotExist}
+import ru.pkuznetsov.recipes.model.RecipeError.{
+  BucketNotExist,
+  CannotParseURI,
+  EmptyBucket,
+  IncorrectMissingIngredients,
+  RecipeNotExist
+}
 import ru.pkuznetsov.recipes.services.RecipeService.{IngredientId, RecipeId}
 import supertagged.TaggedType
 
@@ -23,7 +29,9 @@ import scala.util.{Failure, Try}
 trait RecipeService[F[_]] {
   def save(recipe: RecipeRequestBody): F[SaveResponse]
   def get(id: RecipeId): F[RecipeResponseBody]
+  def delete(id: RecipeId): F[Unit]
   def getByBucket: F[List[RecipeId]]
+  def getByPartOfIngredients(missingCount: Int): F[List[RecipeId]]
 }
 
 final case class SaveResponse(id: Int)
@@ -69,9 +77,33 @@ class RecipeServiceImpl[F[_]](
       _ <- monad.pure(logger.debug(s"got recipe $id successfully"))
     } yield RecipeResponseBody.fromRecipe(recipe)
 
+  def delete(id: RecipeId): F[Unit] =
+    for {
+      _ <- monad.pure(logger.debug(s"delete recipe with id $id"))
+      rows <- recipeDao.deleteRecipe(id)
+      _ <- if (rows == 0) monad.raiseError[Unit](RecipeNotExist(id)) else monad.unit
+      _ <- monad.pure(logger.debug(s"recipe with id $id was delete successfully, $rows rows were deleted"))
+    } yield ()
+
   def getByBucket: F[List[RecipeId]] =
     for {
       _ <- monad.pure(logger.debug(s"getting recipes by bucket"))
+      ingredients <- getIngredientsFromBucket
+      recipes <- recipeDao.getRecipesByIngredients(ingredients)
+      _ <- monad.pure(logger.debug(s"got recipes by bucket successfully"))
+    } yield recipes
+
+  def getByPartOfIngredients(missingCount: Int): F[List[RecipeId]] =
+    for {
+      _ <- monad.pure(logger.debug(s"getting recipes by part of ingredients"))
+      _ <- if (missingCount <= 0) monad.raiseError[Unit](IncorrectMissingIngredients) else monad.unit
+      ingredients <- getIngredientsFromBucket
+      recipes <- recipeDao.getRecipesByPartIngredients(ingredients, missingCount)
+      _ <- monad.pure(logger.debug(s"got recipes by part if bucket successfully"))
+    } yield recipes.sortBy(_.intValue)
+
+  private def getIngredientsFromBucket: F[NonEmptyList[IngredientId]] =
+    for {
       bucketOpt <- bucketDao.getBucket
       ingredients <- bucketOpt match {
         case Some(Bucket(Nil)) => monad.raiseError[NonEmptyList[IngredientId]](EmptyBucket)
@@ -80,9 +112,7 @@ class RecipeServiceImpl[F[_]](
           monad.pure(NonEmptyList.of(x, xs: _*)).map(_.map(ing => IngredientId(ing.ingredientId)))
       }
       _ <- monad.pure(logger.debug(s"get ingredients ${ingredients.toList.mkString(", ")} from bucket"))
-      recipes <- recipeDao.getRecipesByIngredients(ingredients)
-      _ <- monad.pure(logger.debug(s"got recipes by bucket successfully"))
-    } yield recipes
+    } yield ingredients
 
 }
 

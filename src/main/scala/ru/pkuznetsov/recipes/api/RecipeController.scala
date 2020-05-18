@@ -30,9 +30,19 @@ class RecipeController[F[_]: Applicative: Defer: Sync](service: RecipeService[F]
     .out(jsonBody[RecipeResponseBody])
     .errorOut(jsonBody[ErrorData])
 
+  val deleteRecipe = endpoint.delete
+    .in("recipe" / path[Int])
+    .errorOut(jsonBody[ErrorData])
+
   val getRecipeByBucket = endpoint.get
     .in("recipe")
     .in("byBucket")
+    .out(jsonBody[List[Int]])
+    .errorOut(jsonBody[ErrorData])
+
+  val getRecipeByPartOfBucket = endpoint.get
+    .in("recipe")
+    .in("missingIngredients" / path[Int])
     .out(jsonBody[List[Int]])
     .errorOut(jsonBody[ErrorData])
 
@@ -43,7 +53,14 @@ class RecipeController[F[_]: Applicative: Defer: Sync](service: RecipeService[F]
   val getRecipeByBucketRoutes =
     getRecipeByBucket.toRoutes(_ => service.getByBucket.map(_.map(_.intValue)).toTapirResponse)
 
-  override val endpoints = List(saveRecipe, getRecipe, getRecipeByBucket)
+  val getRecipeByPartOfBucketRoutes =
+    getRecipeByPartOfBucket.toRoutes(missing =>
+      service.getByPartOfIngredients(missing).map(_.map(_.intValue)).toTapirResponse)
 
-  override val routes = saveRecipeRoutes <+> getRecipeRoutes <+> getRecipeByBucketRoutes
+  val deleteRecipeRoutes = deleteRecipe.toRoutes(id => service.delete(RecipeId(id)).toTapirResponse)
+
+  override val endpoints =
+    List(saveRecipe, getRecipe, getRecipeByBucket, deleteRecipe, getRecipeByPartOfBucket)
+
+  override val routes = saveRecipeRoutes <+> getRecipeRoutes <+> getRecipeByBucketRoutes <+> deleteRecipeRoutes <+> getRecipeByPartOfBucketRoutes
 }

@@ -18,6 +18,11 @@ object IngredientNamesPostgresQueries {
          |WHERE  id = $id
          |""".stripMargin.query[(Int, String)]
 
+  def selectAll =
+    sql"""
+         |SELECT id, ingredient FROM ingredient_names
+         |""".stripMargin.query[(Int, String)]
+
   def selectByIds(ids: NonEmptyList[Int]) = {
     val first = fr"""
          |SELECT id, ingredient FROM ingredient_names

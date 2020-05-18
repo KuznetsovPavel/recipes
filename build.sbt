@@ -19,7 +19,6 @@ libraryDependencies ++= Seq(
 
   "org.http4s" %% "http4s-dsl" % "0.21.3",
   "org.http4s" %% "http4s-blaze-server" % "0.21.3",
-  "org.http4s" %% "http4s-blaze-client" % "0.21.3",
   "org.http4s" %% "http4s-circe" % "0.21.3",
 
   "org.tpolecat" %% "doobie-core"      % "0.8.8",
@@ -29,7 +28,6 @@ libraryDependencies ++= Seq(
   "com.github.pureconfig" %% "pureconfig" % "0.12.3",
 
   "com.softwaremill.macwire" %% "macros" % "2.3.4" % "provided",
-  "com.softwaremill.macwire" %% "macrosakka" % "2.3.4" % "provided",
 
   "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-http4s" % "0.14.5",
   "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs" % "0.14.5",
