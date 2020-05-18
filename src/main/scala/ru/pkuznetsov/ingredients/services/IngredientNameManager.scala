@@ -2,6 +2,7 @@ package ru.pkuznetsov.ingredients.services
 
 import cats.MonadError
 import cats.data.NonEmptyList
+import cats.effect.Sync
 import cats.instances.list._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
@@ -20,7 +21,8 @@ trait IngredientNameManager[F[_]] {
   def checkIngredientIds(ids: List[IngredientId]): F[Unit]
 }
 
-class IngredientNameManagerImpl[F[_]](dao: IngredientNamesDao[F])(implicit monad: MonadError[F, Throwable])
+class IngredientNameManagerImpl[F[_]: Sync](dao: IngredientNamesDao[F])(
+    implicit monad: MonadError[F, Throwable])
     extends IngredientNameManager[F]
     with StrictLogging {
 
@@ -46,8 +48,8 @@ class IngredientNameManagerImpl[F[_]](dao: IngredientNamesDao[F])(implicit monad
       oldIngNames <- dao.getByNames(nonEmptyIngredients)
       newNames <- monad.pure(names.diff(oldIngNames.map(_.name)))
       _ <- newNames match {
-        case Nil  => monad.catchNonFatal(logger.debug("find add ingredients"))
-        case list => monad.catchNonFatal(logger.debug(s"can not find ingredients ${list.mkString(", ")}"))
+        case Nil  => Sync[F].delay(logger.debug("find add ingredients"))
+        case list => Sync[F].delay(logger.debug(s"can not find ingredients ${list.mkString(", ")}"))
       }
       newIngNames <- insertNames(newNames)
     } yield oldIngNames ++ newIngNames

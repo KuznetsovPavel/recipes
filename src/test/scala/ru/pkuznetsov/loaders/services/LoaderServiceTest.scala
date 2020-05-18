@@ -4,21 +4,22 @@ import java.net.URI
 
 import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.{AsyncFunSuite, Matchers}
+import ru.pkuznetsov.core.utils.FutureSyncForTest
+import ru.pkuznetsov.ingredients.model.IngredientName
 import ru.pkuznetsov.ingredients.services.IngredientNameManager
 import ru.pkuznetsov.loaders.connectors.spoonacular.RecipeLoader
-import ru.pkuznetsov.recipes.dao.{IngredientRow, RecipeDao, RecipeRow}
-import ru.pkuznetsov.recipes.services.{RecipeTableManager, RecipeTableManagerImpl}
-import cats.instances.future._
-import ru.pkuznetsov.ingredients.model.IngredientName
 import ru.pkuznetsov.loaders.connectors.spoonacular.SpoonacularLoader.LoaderRecipeId
 import ru.pkuznetsov.loaders.model.LoaderError.DuplicateIngredients
+import ru.pkuznetsov.recipes.dao.{IngredientRow, RecipeDao, RecipeRow}
 import ru.pkuznetsov.recipes.model.{Ingredient, Recipe}
 import ru.pkuznetsov.recipes.services.RecipeService.{IngredientId, RecipeId}
+import ru.pkuznetsov.recipes.services.RecipeTableManagerImpl
 
 import scala.concurrent.Future
 
 class LoaderServiceTest extends AsyncFunSuite with Matchers with AsyncMockFactory {
 
+  implicit val futureSync = new FutureSyncForTest().futureSync
   val recipeLoader = mock[RecipeLoader[Future]]
   val recipeDao = mock[RecipeDao[Future]]
   val ingNameManager = mock[IngredientNameManager[Future]]

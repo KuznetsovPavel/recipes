@@ -1,6 +1,7 @@
 package ru.pkuznetsov.loaders.connectors.spoonacular
 
 import cats.MonadError
+import cats.effect.Sync
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.monadError._
@@ -22,7 +23,7 @@ trait RecipeLoader[F[_]] {
   def getRecipe(recipeId: LoaderRecipeId): F[Recipe]
 }
 
-class SpoonacularLoader[F[_]](backend: Backend[F], apiKey: SpoonacularApiKey)(
+class SpoonacularLoader[F[_]: Sync](backend: Backend[F], apiKey: SpoonacularApiKey)(
     implicit monad: MonadError[F, Throwable])
     extends RecipeLoader[F]
     with StrictLogging {
@@ -44,7 +45,7 @@ class SpoonacularLoader[F[_]](backend: Backend[F], apiKey: SpoonacularApiKey)(
         logger.info(s"cannot load recipe with id $recipeId because ${ex.getMessage}")
         LoaderError.SpoonacularLoaderError(recipeId)
       }
-      _ <- monad.pure(logger.info(s"get recipe with id $recipeId"))
+      _ <- Sync[F].delay(logger.info(s"get recipe with id $recipeId"))
       recipe <- SpoonacularDeserializator.fromResponse[F](recipeJson)
     } yield recipe
 
